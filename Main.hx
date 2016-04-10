@@ -3,6 +3,8 @@ package;
 import asys.FileSystem;
 import asys.io.File;
 
+using tink.CoreApi;
+
 @:build(await.Await.build())
 class Main {
 
@@ -16,12 +18,12 @@ class Main {
 		if (@:await FileSystem.exists(@:await FileSystem.fullPath('build.hxml'))) {
 			switch @:await File.getContent(path) {
 				case 'ok': 
-					var yes = @:await FileSystem.rename(path, path+'1');
-					trace(yes);
-				default: trace('error');
+					return @:await FileSystem.rename(path, path+'1');					
+				default: 
+					return '';
 			}
 		} else {
-			trace('File does not exist');
+			throw 'error';
 		}
 	}
 	
