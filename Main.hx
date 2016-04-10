@@ -13,9 +13,13 @@ class Main {
 	@:async 
 	function test() {
 		var path = 'build.hxml';
-		if (@:await FileSystem.exists(path)) {
-			var content = @:await File.getContent(path);
-			trace(content);
+		if (@:await FileSystem.exists(@:await FileSystem.fullPath('build.hxml'))) {
+			switch @:await File.getContent(path) {
+				case 'ok': 
+					var yes = @:await FileSystem.rename(path, path+'1');
+					trace(yes);
+				default: trace('error');
+			}
 		} else {
 			trace('File does not exist');
 		}
