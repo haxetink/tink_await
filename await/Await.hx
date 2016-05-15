@@ -6,6 +6,11 @@ import haxe.macro.Expr;
 using tink.CoreApi;
 using tink.MacroApi;
 
+typedef AsyncContext = {
+	catcher: Null<String>,
+	transformed: Bool
+}
+
 class AsyncField {
 	
 	var expr: Expr;
@@ -34,124 +39,155 @@ class AsyncField {
 		}
 	
 	public function transform(): Expr {
-		var list = [], processed = process([expr], null);
-		list.push(macro var $triggerName = tink.core.Future.trigger());
+		var list = [], processed = process([expr], {catcher: null, transformed: false});
+		
+		return macro @:pos(expr.pos) {
+			return tink.core.Future.async(function($triggerName)
+				$b{catches.concat([processed])}
+			);
+		};
+		
+		/*list.push(macro var $triggerName = tink.core.Future.trigger());
 		list = list.concat(catches);
 		switch processed.expr {
 			case EBlock(el): list = list.concat(el);
 			default: list.push(processed);
 		}
-		list.push(macro return $triggerVar);
+		list.push(macro return $triggerVar.asFuture());*/
+		
+		
 		return list.toBlock(expr.pos);
 	}
 	
-	function tmp(): String return "$t"+(count++);
+	function tmp(): String return "__t"+(count++);
 	
 	function copy(e: Expr): Expr
 		return {expr: e.expr, pos: e.pos};
 		
 	function catchCall(catcher: Null<String>): Expr {
 		if (catcher == null)
-			return macro $triggerVar.trigger(tink.core.Outcome.Failure(e));
+			return macro $triggerVar(tink.core.Outcome.Failure(e));
 		return catcher.resolve().call(['e'.resolve()]);
 	}
-		
-	function process(el: Array<Expr>, catcher: Null<String>): Expr {
+	
+	function extract(condition: Expr, expr: Expr): Expr {
+		var value = tmp();
+		var handle = copy(condition);
+		condition.expr = (macro $i{value}).expr;
+		return @:pos(condition.pos) macro {
+			var $value = $handle;
+			$expr;
+		};
+	}
+	
+	function context(ctx: AsyncContext) {
+		return {catcher: ctx.catcher, transformed: false};
+	}
+	
+	function addContinue(e: Expr) {
+		if (e == null) return;
+		e.expr = (macro {
+			${copy(e)}; __continue();
+		}).expr;
+	}
+	
+	function makeContinue(body: Expr, el: Array<Expr>, ctx: AsyncContext) {
+		var c = context(ctx);
+		var cb = body.func(['__continue'.toArg()], null, null, false).asExpr();
+		var next = process(el, c);
+		var nextAsCb = next.func([], null, null, false).asExpr();
+		return macro ($cb)($nextAsCb);
+	}
+	
+	function process(el: Array<Expr>, ctx: AsyncContext) {
 		var output: Array<Expr> = [];
 		
 		while (el.length > 0) {
 			var e = el.shift();
+			if (e == null) continue;
 			switch e.expr {
-				case EBlock(el):
-					output.push(process(el, catcher));
+				case EBlock(l):
+					el = l.concat(el);
 				case EIf(condition, e1, e2):
 					var await = getAwait(condition);
 					if (await != null) {
-						var value = tmp();
-						output.push(process([
-							macro {
-								var $value = $condition;
-								if ($i{value}) $e1 else $e2;
-							}
-						], catcher));
+						el.unshift(extract(condition, e));
+						output.push(process(el, ctx));
+						break;
 					} else {
-						output.push(macro if ($condition) ${process([e1], catcher)} else ${process([e2], catcher)});
+						var body: Expr = {expr: EIf(condition, process([e1], ctx), e2 == null ? null : process([e2], ctx)), pos: e.pos};
+						if (ctx.transformed) {
+							// change to yield
+							[e1, e2].map(addContinue);
+							//ctx.transformed = false;
+							output.push(makeContinue(body, el, ctx));
+							break;
+						} else {
+							output.push(body);
+						}
 					}
 				case ESwitch(condition, cl, edef):
 					var await = getAwait(condition);
 					if (await != null) {
-						var value = tmp();
-						var handle = copy(condition);
-						condition.expr = (macro $i{value}).expr;
-						output.push(process([
-							macro {
-								var $value = $handle;
-								$e;
-							}
-						], catcher));
-					} else {
-						for (c in cl) {
-							c.expr.expr = process([c.expr], catcher).expr;
-						}
-						if (edef != null) edef.expr = process([edef], catcher).expr;
-						output.push(e);
-					}
-				case EReturn(e1):
-					e.expr = (macro $triggerVar.trigger(tink.core.Outcome.Success($e1))).expr;
-					output.push(process([e], catcher));
-				case EThrow(e1):
-					e.expr = (macro $triggerVar.trigger(tink.core.Outcome.Failure($e1))).expr;
-					output.push(process([e], catcher));
-				case ETry(e1, cl):
-					var i = 0, names = [for (c in cl) tmp()];
-					for (c in cl) {
-						var name = names[i];
-						var next = cl.length > i+1 ? names[i+1] : null;
-						var catchMethod = process([c.expr], next).func([c.name.toArg()], null, null, false);
-						catches.push({expr: EFunction(name, catchMethod), pos: c.expr.pos});
-						c.expr.expr = name.resolve().call([c.name.resolve()]).expr;
-						i++;
-					}
-					e1.expr = process([e1], names[0]).expr;
-					output.push(e);
-				/*case EVars(vars):
-					var waits = [];
-					for (v in vars) {
-						if (hasAwait(v.expr)) {
-							waits.push(v);
-						}
-					}
-					if (waits.length > 0) {
-						var handles = [], args = [];
-						for (wait in waits) {
-							handles.push({expr: em.expr, pos: em.pos});
-							var value = tmp();
-							em.expr = (macro $i{value}).expr;
-						}
-						em.expr = (macro __v).expr;
-						output = [macro $handle.handle(function(__v) $b{output})];
+						el.unshift(extract(condition, e));
+						output.push(process(el, ctx));
 						break;
 					} else {
-						output.push(e);
-					}*/
+						for (c in cl) {
+							c.expr.expr = process([c.expr], ctx).expr;
+						}
+						if (edef != null) 
+							edef = process([edef], ctx);
+						if (ctx.transformed) {
+							// change to yield
+							cl.map(function(c) return c.expr).concat([edef]).map(addContinue);
+							//ctx.transformed = false;
+							output.push(makeContinue(e, el, ctx));
+							break;
+						} else {
+							output.push(e);
+						}
+					}
+				case EReturn(e1):
+					e.expr = (macro $triggerVar(tink.core.Outcome.Success($e1))).expr;
+					output.push(macro @:pos(e.pos) {
+						${process([e], ctx)}; return;
+					});
+				case EThrow(e1):
+					if (ctx.catcher != null)
+						e.expr = ctx.catcher.resolve().call([e1]).expr;
+					else
+					e.expr = (macro $triggerVar(tink.core.Outcome.Failure($e1))).expr;
+					output.push(macro @:pos(e.pos) {
+						${process([e], ctx)}; return;
+					});
+				case ETry(e1, cl):
+					var name = tmp();
+					for (c in cl)
+						c.expr.expr = process([c.expr], {catcher: null, transformed: false}).expr;
+					var body = {pos: e.pos, expr: ETry(macro throw e, cl)};
+					var catchMethod = body.func(['e'.toArg()], null, null, false);
+					catches.push({expr: EFunction(name, catchMethod), pos: e.pos});
+					ctx.catcher = name;
+					e1.expr = process([e1], ctx).expr;
+					output.push(e);
 				default:
 					var await = getAwait(e);
 					if (await != null) {
 						var handle = copy(await.b);
-						var surprise = tmp(), value = tmp();
-						await.a.expr = (macro $i{value}).expr;
+						var surprise = tmp(), value = tmp(), success = tmp();
+						await.a.expr = (macro cast $i{value}).expr;
 						el.unshift(e);
-						var body = process(el, catcher);
-						body = macro
-							switch $i{surprise} {
-								case tink.core.Outcome.Success($i{value}): 
-									try $body catch (e: Dynamic) ${catchCall(catcher)};
-								case tink.core.Outcome.Failure(e):
-									${catchCall(catcher)};
-							}
+						var body = process(el, ctx);
+						body = macro @:pos(e.pos)
+							try {
+								var $value = await.FutureTools.getValue($i{surprise});
+								$body;
+							} catch (e: Dynamic) ${catchCall(ctx.catcher)}
 						;
 						var func = body.func([surprise.toArg()], null, null, false).asExpr();
-						output.push(process([macro $handle.handle($func)], catcher));
+						ctx.transformed = true;
+						output.push(process([macro @:pos(handle.pos) $handle.handle($func)], ctx));
 						break;
 					}
 					output.push(e);
@@ -159,11 +195,12 @@ class AsyncField {
 		}
 		return switch output.length {
 			case 1: output[0];
-			default: macro $b{output}; 
+			default: output.toBlock(); 
 		}
 	}
 	
 }
+
 
 class Await {
 	
@@ -178,7 +215,16 @@ class Await {
 					for (meta in field.meta) {
 						if (meta.name == ':async') {
 							var flow = new AsyncField(f.expr);
-							trace(flow.transform().toString());
+							var processed = flow.transform();
+							#if debug
+							//if (field.name == 'connect') {
+							Sys.println('==================================');
+							Sys.println(field.name);
+							Sys.println('==================================');
+							Sys.println(processed.toString());
+							//}
+							#end
+							f.expr = processed;
 						}
 					}
 				}
