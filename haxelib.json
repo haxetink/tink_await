@@ -1,0 +1,15 @@
+{
+  "name": "await",
+  "url" : "https://github.com/benmerckx/await",
+  "license": "MIT",
+  "tags": ["cross", "web"],
+  "description": "Haxe async/await",
+  "version": "0.0.0",
+  "releasenote": "Init",
+  "contributors": ["benmerckx"],
+  "classPath": "",
+  "dependencies": {
+    "tink_macro": "",
+    "tink_core": ""
+  }
+}
