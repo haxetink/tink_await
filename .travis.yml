@@ -20,7 +20,6 @@ install:
   - haxelib run travix install
 
 script:
-  - haxelib run travix interp
   - haxelib run travix neko
   - haxelib run travix python
   - haxelib run travix node
