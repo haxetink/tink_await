@@ -83,6 +83,13 @@ class RunTests extends buddy.SingleSuite implements Await {
 					done();
 				});
 			});
+			
+			it('should catch failures and recover', function (done) {
+				tryCatch().handle(function(outcome) {
+					outcome.should.equal(Success('error'));
+					done();
+				});
+			});
 		});
 	}
 	
@@ -163,6 +170,17 @@ class RunTests extends buddy.SingleSuite implements Await {
 	@async function passError() {
 		@await throwError();
 		return true;
+	}
+	
+	@async function tryCatch() {
+		var response = 'fail';
+		try {
+			@await waitForIt();
+			@await passError();
+		} catch (e: String) {
+			response = e;
+		}
+		return response;
 	}
 	
 	function waitForIt() {
