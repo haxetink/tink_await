@@ -19,7 +19,7 @@ Any expression which returns a [`Future`](https://github.com/haxetink/tink_core#
 function getConfig() {
   return Future.asyc(function(__return) {
     loadFile('config.json').handle(function(tmp) {
-      __return(Json.parse(tmp));
+      __return(Success(Json.parse(tmp)));
     });
   });
 }
@@ -44,11 +44,12 @@ To see more examples have a look at [the tests](https://github.com/benmerckx/awa
 If an @await is used in a (for or while) loop, the loop will continue after the future is resolved.
 
 ```haxe
-function loop() {
+@async function loop() {
   for (i in 0 ... 10) {
     // will continue after someAsycCall is done
     @await someAsyncCall();
   }
+  return 'done';
 }
 ```
 
