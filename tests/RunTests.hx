@@ -10,8 +10,15 @@ class RunTests extends buddy.SingleSuite implements Await {
 
 	public function new() {
 		describe('TestAwait', {
-			it('should process @await', function (done) {
+			it('should process @async and @await', function (done) {
 				processAwait().handle(function(outcome) {
+					outcome.should.equal(Success(true));
+					done();
+				});
+			});
+			
+			it('should process @:async and @:await', function (done) {
+				processColonAwait().handle(function(outcome) {
 					outcome.should.equal(Success(true));
 					done();
 				});
@@ -95,6 +102,11 @@ class RunTests extends buddy.SingleSuite implements Await {
 	
 	@async function processAwait() {
 		var wait = @await waitForIt();
+		return wait;
+	}
+	
+	@:async function processColonAwait() {
+		var wait = @:await waitForIt();
 		return wait;
 	}
 	

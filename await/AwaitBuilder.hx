@@ -38,7 +38,7 @@ class AsyncField {
 		}
 		if (e == null) return false;
 		switch e.expr {
-			case EMeta(m, em) if (m.name == 'await'):
+			case EMeta(m, em) if (m.name == 'await' || m.name == ':await'):
 				return true;
 			default:
 				var await = false;
@@ -122,7 +122,7 @@ class AsyncField {
 				  });
 				}
 				return line(0);
-			case EMeta(m, em) if (m.name == 'await'):
+			case EMeta(m, em) if (m.name == 'await' || m.name == ':await'):
 				var tmp = tmpVar();
 				return process(em, ctx, function(transformed)
 					return macro @:pos(em.pos)
@@ -377,7 +377,7 @@ class AwaitBuilder {
 			case FieldType.FFun(f):
 				if (field.meta != null)
 					for (meta in field.meta)
-						if (meta.name == 'async') {
+						if (meta.name == 'async' || meta.name == ':async') {
 							var flow = new AsyncField(f.expr);
 							var processed = flow.transform();
 							#if debug
@@ -387,6 +387,7 @@ class AwaitBuilder {
 							Sys.println(processed.toString());
 							#end
 							f.expr = processed;
+							field.meta.remove(meta);
 						}
 			default:
 		}
