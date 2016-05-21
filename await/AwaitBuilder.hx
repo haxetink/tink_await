@@ -16,18 +16,28 @@ typedef AsyncContext = {
 
 class AsyncField {
 	
+	var func: Function;
 	var expr: Expr;
 	
-	public function new(expr: Expr)
-		this.expr = expr;
+	public function new(func: Function) {
+		this.func = func;
+		expr = func.expr;
+	}
 	
-	public function transform(): Expr
-		return macro @:pos(expr.pos)
-			return tink.core.Future.async(function(__return) 
-				try ${process(expr, {needsResult: false}, function(e) return e)}
-				catch(e: Dynamic) ${catchCall(null)}
-			)
-		;
+	public function transform(): Function {
+		var unknown = expr.pos.makeBlankType();
+		var type = func.ret == null ? unknown : func.ret;
+		return {
+			args: func.args,
+			params: func.params,
+			ret: (macro: tink.core.Future<tink.core.Outcome<$type, $unknown>>),
+			expr: macro @:pos(expr.pos)
+				return tink.core.Future.async(function(__return) 
+					try ${process(expr, {needsResult: false}, function(e) return e)}
+					catch(e: Dynamic) ${catchCall(null)}
+				)
+		};
+	}
 		
 	function hasAwait(?el: Array<Expr>, ?e: Expr): Bool {
 		if (el != null) {
@@ -378,15 +388,15 @@ class AwaitBuilder {
 				if (field.meta != null)
 					for (meta in field.meta)
 						if (meta.name == 'async' || meta.name == ':async') {
-							var flow = new AsyncField(f.expr);
+							var flow = new AsyncField(f);
 							var processed = flow.transform();
 							#if debug
 							Sys.println('==================================');
 							Sys.println(field.name);
 							Sys.println('==================================');
-							Sys.println(processed.toString());
+							Sys.println(processed.expr.toString());
 							#end
-							f.expr = processed;
+							field.kind = FieldType.FFun(processed);
 							field.meta.remove(meta);
 						}
 			default:

@@ -97,6 +97,13 @@ class RunTests extends buddy.SingleSuite implements Await {
 					done();
 				});
 			});
+			
+			it('should transform the type', function (done) {
+				expectString().handle(function(outcome) {
+					outcome.should.equal(Success('string'));
+					done();
+				});
+			});
 		});
 	}
 	
@@ -193,6 +200,11 @@ class RunTests extends buddy.SingleSuite implements Await {
 			response = e;
 		}
 		return response;
+	}
+	
+	@async function expectString(): String {
+		@await waitForIt();
+		return 'string';
 	}
 	
 	function waitForIt() {
