@@ -25,7 +25,7 @@ function getConfig() {
 }
 ```
 
-@await can be used anywhere in your code:
+`@await` can be used anywhere in your code:
 
 ```haxe
 @async function loadStuff() {
@@ -35,6 +35,8 @@ function getConfig() {
   }
 }
 ```
+
+You can also use `@:async`and `@:await`.
 
 To see more examples have a look at [the tests](https://github.com/benmerckx/await/blob/master/tests/RunTests.hx#L96).
 
@@ -106,6 +108,16 @@ function() {
     case Success(data): trace(data);
     case Failure(error): trace('Something went wrong: '+error);
   });
+}
+```
+
+## Typing @async functions
+
+An @async function's return type will also be transformed. The following function will result in a return type of `Surprise<String, Unknown<0>>`
+
+```haxe
+@async function(): String {
+  return @await getBuildFile();
 }
 ```
 
