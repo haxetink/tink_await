@@ -1,5 +1,6 @@
 package await;
 
+import await.AwaitBuilder.AsyncField;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import await.MacroTools.*;
@@ -38,6 +39,12 @@ class AsyncField {
 				)
 		};
 	}
+	
+	function isAwait(keyword: String)
+		return keyword == 'await' || keyword == ':await';
+		
+	function isAsync(keyword: String)
+		return keyword == 'async' || keyword == ':async';
 		
 	function hasAwait(?el: Array<Expr>, ?e: Expr): Bool {
 		if (el != null) {
@@ -48,7 +55,7 @@ class AsyncField {
 		}
 		if (e == null) return false;
 		switch e.expr {
-			case EMeta(m, em) if (m.name == 'await' || m.name == ':await'):
+			case EMeta(m, em) if (isAwait(m.name)):
 				return true;
 			default:
 				var await = false;
@@ -132,12 +139,15 @@ class AsyncField {
 				  });
 				}
 				return line(0);
-			case EMeta(m, em) if (m.name == 'await' || m.name == ':await'):
+			case EMeta(m, em) if (isAwait(m.name)):
 				var tmp = tmpVar();
 				return process(em, ctx, function(transformed)
 					return macro @:pos(em.pos)
 						$transformed.handle(${handler(tmp, ctx, next)})
 				);
+			
+			case EMeta(m, {expr: EFunction(name, f), pos: pos}) if (isAsync(m.name)):
+				return next(EFunction(name, new AsyncField(f).transform()).at(pos));
 			case EFor(it, expr):
 				switch it.expr {
 					case EIn(e1, e2):
@@ -293,6 +303,10 @@ class AsyncField {
 					return process(e2, ctx, function(t2)
 						return next(EBinop(op, t1, t2).at(e.pos))
 					)
+				);
+			case EParenthesis(e1):
+				return process(e1, ctx, function(t1)
+					return next(EParenthesis(t1).at(e.pos))
 				);
 			case EArray(e1, e2):
 				ctx.needsResult = true;

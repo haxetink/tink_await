@@ -45,6 +45,20 @@ class RunTests extends buddy.SingleSuite implements Await {
 				});
 			});
 			
+			it('should return the result of an async try/catch', function (done) {
+				asyncTryCatchReturn().handle(function(outcome) {
+					outcome.should.equal(Success(true));
+					done();
+				});
+			});
+			
+			it('should return the result of a failed async try/catch', function (done) {
+				asyncTryCatchReturnNegative().handle(function(outcome) {
+					outcome.should.equal(Success(false));
+					done();
+				});
+			});
+			
 			it('should reach the rest of a method after if and switch statements', function (done) {
 				reachNext().handle(function(outcome) {
 					outcome.should.equal(Success(4));
@@ -104,6 +118,13 @@ class RunTests extends buddy.SingleSuite implements Await {
 					done();
 				});
 			});
+			
+			it('should transform functions', function (done) {
+				functions().handle(function(outcome) {
+					outcome.should.equal(Success(true));
+					done();
+				});
+			});
 		});
 	}
 	
@@ -135,6 +156,12 @@ class RunTests extends buddy.SingleSuite implements Await {
 		};
 		return a;
 	}
+	
+	@async function asyncTryCatchReturn()
+		return try @await waitForIt() catch (e: Dynamic) false;
+	
+	@async function asyncTryCatchReturnNegative()
+		return try @await passError() catch (e: Dynamic) false;
 		
 	@async function reachNext() {
 		var outcome = 0;
@@ -205,6 +232,12 @@ class RunTests extends buddy.SingleSuite implements Await {
 	@async function expectString(): String {
 		@await waitForIt();
 		return 'string';
+	}
+	
+	@async function functions() {
+		@async function test()
+			return !(@await waitForIt());
+		return !(@await test());
 	}
 	
 	function waitForIt() {
