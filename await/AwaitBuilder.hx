@@ -91,11 +91,13 @@ class AsyncField {
 			case null: return null;
 			case EReturn(e1): 
 				return macro @:pos(e.pos)
-					{__return(tink.core.Outcome.Success($e1)); return;}
+					return __return(tink.core.Outcome.Success($e1));
 			case EBreak if(ctx.loop != null):
-				return macro {${breakName(ctx.loop).resolve()}(); return;}
+				return macro @:pos(e.pos)
+					return ${breakName(ctx.loop).resolve()}();
 			case EContinue if(ctx.loop != null):
-				return macro {${continueName(ctx.loop).resolve()}(); return;}
+				return macro @:pos(e.pos)
+					return ${continueName(ctx.loop).resolve()}();
 			case EFunction(_,_): return e;
 			default: return e.map(processControl.bind(_, ctx));
 		}
@@ -212,18 +214,18 @@ class AsyncField {
 				ctx.needsResult = true;
 				return process(e1, ctx, function(transformed)
 					return macro @:pos(e.pos)
-						{__return(tink.core.Outcome.Success($transformed)); return;}
+						return __return(tink.core.Outcome.Success($transformed))
 				);
 			case EThrow(e1):
 				ctx.needsResult = true;
 				if (ctx.catcher != null)
 					return process(e1, ctx, function(transformed)
 						return macro @:pos(e.pos)
-							{${ctx.catcher.resolve()}($transformed); return;}
+							return ${ctx.catcher.resolve()}($transformed)
 					);
 				return process(e1, ctx, function(transformed)
 					return macro @:pos(e.pos)
-						{__return(tink.core.Outcome.Failure($transformed)); return;}
+						return __return(tink.core.Outcome.Failure($transformed))
 				);
 			case ETernary(econd, eif, eelse) |
 				 EIf (econd, eif, eelse):
