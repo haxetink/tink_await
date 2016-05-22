@@ -35,7 +35,7 @@ class AsyncField {
 		return {
 			args: func.args,
 			params: func.params,
-			ret: !asyncReturn ? func.ret : (macro: tink.core.Future<tink.core.Outcome<$type, $unknown>>),
+			ret: !asyncReturn || func.ret == null ? func.ret : (macro: tink.core.Future<tink.core.Outcome<$type, $unknown>>),
 			expr: 
 				if (asyncReturn)
 					macro @:pos(expr.pos)
@@ -98,6 +98,10 @@ class AsyncField {
 		function transformNext(i: Int, transformedEl: Array<Expr>): Expr {
 			if (i == el.length)
 				return final(transformedEl);
+			if (el[i] == null) {
+				transformedEl.push(null);
+				return transformNext(i + 1, transformedEl);
+			}
 			return process(el[i], ctx, function(transformed: Expr): Expr {
 				transformedEl.push(transformed);
 				return transformNext(i + 1, transformedEl);
@@ -142,6 +146,7 @@ class AsyncField {
 		
 	function process(e: Expr, ctx: AsyncContext, next: Expr -> Expr): Expr {
 		ctx = Reflect.copy(ctx);
+		
 		switch e.expr {
 			case EBlock(el):
 				if (el.length == 0) return emptyExpr();
@@ -170,10 +175,8 @@ class AsyncField {
 				switch it.expr {
 					case EIn(e1, e2):
 						var ident = e1.getIdent().sure();
-						var type = Context.follow(Context.typeof(e2));
-						var iteratorBody = 
-							if (Context.unify(type, (macro: Iterator<Dynamic>).toType().sure())) e2;
-							else macro $e2.iterator();
+						var blank = e2.pos.makeBlankType();
+						var iteratorBody = macro @:pos(e2.pos) ($e2: await.LoopIterator<$blank>);
 						ctx.needsResult = false;
 						var body = process(macro while(__iterator.hasNext()) {
 							var $ident = __iterator.next();
@@ -229,12 +232,13 @@ class AsyncField {
 						__do();
 					};
 			case EBreak:
-				return macro @:pos(e.pos) ${breakName(ctx.loop).resolve()}();
+				return macro @:pos(e.pos) return ${breakName(ctx.loop).resolve()}();
 			case EContinue:
-				return macro @:pos(e.pos) ${continueName(ctx.loop).resolve()}();
+				return macro @:pos(e.pos) return ${continueName(ctx.loop).resolve()}();
 			case ETry(e1, catches):
 				var wrapper = new AsyncWrapper(ctx, next);
 				var name = tmpVar();
+				ctx.catcher = null;
 				var transformedCatches = [
 					for (c in catches)
 						{type: c.type, name: c.name, expr: c.expr == null ? null : process(c.expr, ctx, wrapper.invocation)}
