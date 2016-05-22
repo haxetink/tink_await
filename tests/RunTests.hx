@@ -125,6 +125,13 @@ class RunTests extends buddy.SingleSuite implements Await {
 					done();
 				});
 			});
+			
+			it('should should not return in an @await field', function (done) {
+				awaitField(function(result) {
+					result.should.be(true);
+					done();
+				});
+			});
 		});
 	}
 	
@@ -238,6 +245,11 @@ class RunTests extends buddy.SingleSuite implements Await {
 		@async function test()
 			return !(@await waitForIt());
 		return !(@await test());
+	}
+	
+	@await function awaitField(done) {
+		var response = @await waitForIt();
+		done(response);
 	}
 	
 	function waitForIt() {

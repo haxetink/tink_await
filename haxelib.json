@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "web"],
   "description": "Haxe async/await",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "releasenote": "Init",
   "contributors": ["benmerckx"],
   "classPath": "",

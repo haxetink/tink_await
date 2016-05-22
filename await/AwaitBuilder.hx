@@ -4,6 +4,7 @@ import await.AwaitBuilder.AsyncField;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import await.MacroTools.*;
+import await.AwaitBuilder.*;
 
 using tink.CoreApi;
 using tink.MacroApi;
@@ -12,17 +13,20 @@ using Lambda;
 typedef AsyncContext = {
 	?catcher: String,
 	?loop: String,
-	needsResult: Bool
+	needsResult: Bool,
+	asyncReturn: Bool
 }
 
 class AsyncField {
 	
 	var func: Function;
 	var expr: Expr;
+	var asyncReturn: Bool;
 	
-	public function new(func: Function) {
+	public function new(func: Function, asyncReturn: Bool) {
 		this.func = func;
 		expr = func.expr;
+		this.asyncReturn = asyncReturn;
 	}
 	
 	public function transform(): Function {
@@ -31,20 +35,18 @@ class AsyncField {
 		return {
 			args: func.args,
 			params: func.params,
-			ret: (macro: tink.core.Future<tink.core.Outcome<$type, $unknown>>),
-			expr: macro @:pos(expr.pos)
-				return tink.core.Future.async(function(__return) 
-					try ${process(expr, {needsResult: false}, function(e) return e)}
-					catch(e: Dynamic) ${catchCall(null)}
-				)
+			ret: !asyncReturn ? func.ret : (macro: tink.core.Future<tink.core.Outcome<$type, $unknown>>),
+			expr: 
+				if (asyncReturn)
+					macro @:pos(expr.pos)
+						return tink.core.Future.async(function(__return) 
+							try ${process(expr, {asyncReturn: true, needsResult: false}, function(e) return e)}
+							catch(e: Dynamic) ${catchCall(null)}
+						)
+				else
+					process(expr, {asyncReturn: false, needsResult: false}, function(e) return e)
 		};
 	}
-	
-	function isAwait(keyword: String)
-		return keyword == 'await' || keyword == ':await';
-		
-	function isAsync(keyword: String)
-		return keyword == 'async' || keyword == ':async';
 		
 	function hasAwait(?el: Array<Expr>, ?e: Expr): Bool {
 		if (el != null) {
@@ -66,12 +68,15 @@ class AsyncField {
 		
 	function catchCall(catcher: Null<String>)
 		return 
-			if (catcher == null) macro __return(tink.core.Outcome.Failure(e))
-			else catcher.resolve().call(['e'.resolve()]);
+			if (catcher == null) 
+				macro __return(tink.core.Outcome.Failure(e))
+			else 
+				catcher.resolve().call(['e'.resolve()]);
 		
 	function handler(tmp: String, ctx: AsyncContext, next: Expr -> Expr): Expr {
 		var body = unpack(next(macro await.FutureTools.getValue(${tmp.resolve()})));
-		body = macro try $body catch(e: Dynamic) ${catchCall(ctx.catcher)};
+		if (ctx.asyncReturn || ctx.catcher != null)
+			body = macro try $body catch(e: Dynamic) ${catchCall(ctx.catcher)};
 		return body.func([tmp.toArg()], false).asExpr();
 	}
 	
@@ -109,6 +114,18 @@ class AsyncField {
 			case EReturn(e1): 
 				return macro @:pos(e.pos)
 					return __return(tink.core.Outcome.Success($e1));
+			case EThrow(e1): 
+				return
+					if (ctx.catcher != null)
+						macro @:pos(e.pos)
+							return ${ctx.catcher.resolve()}($e1)
+					else if (ctx.asyncReturn)
+						macro @:pos(e.pos)
+							return __return(tink.core.Outcome.Failure($e1))
+					else
+						macro @:pos(e.pos)
+							throw $e1
+				;
 			case EBreak if(ctx.loop != null):
 				return macro @:pos(e.pos)
 					return ${breakName(ctx.loop).resolve()}();
@@ -139,15 +156,16 @@ class AsyncField {
 				  });
 				}
 				return line(0);
+			case EMeta(m, {expr: EFunction(name, f), pos: pos}) if (isAsync(m.name)):
+				return next(EFunction(name, new AsyncField(f, true).transform()).at(pos));
+			case EMeta(m, {expr: EFunction(name, f), pos: pos}) if (isAwait(m.name)):
+				return next(EFunction(name, new AsyncField(f, false).transform()).at(pos));
 			case EMeta(m, em) if (isAwait(m.name)):
 				var tmp = tmpVar();
 				return process(em, ctx, function(transformed)
 					return macro @:pos(em.pos)
 						$transformed.handle(${handler(tmp, ctx, next)})
 				);
-			
-			case EMeta(m, {expr: EFunction(name, f), pos: pos}) if (isAsync(m.name)):
-				return next(EFunction(name, new AsyncField(f).transform()).at(pos));
 			case EFor(it, expr):
 				switch it.expr {
 					case EIn(e1, e2):
@@ -161,7 +179,7 @@ class AsyncField {
 							var $ident = __iterator.next();
 							$expr;
 						}, ctx, next);
-						return macro {var __iterator = $iteratorBody; $body;};
+						return macro @:pos(e.pos) {var __iterator = $iteratorBody; $body;};
 					default:
 				}
 			case EWhile(econd, e1, normalWhile):
@@ -185,7 +203,7 @@ class AsyncField {
 				);
 				var breakBody = next(emptyExpr());
 				if (normalWhile)
-					return macro {
+					return macro @:pos(e.pos) {
 						var __doCount = 0;
 						function $breakI() $breakBody;
 						function $continueI() {
@@ -199,7 +217,7 @@ class AsyncField {
 						${continueI.resolve()}();
 					};
 				else
-					return macro {
+					return macro @:pos(e.pos) {
 						var __doCount = 0;
 						function $breakI() $breakBody;
 						function __do() {
@@ -211,9 +229,9 @@ class AsyncField {
 						__do();
 					};
 			case EBreak:
-				return macro ${breakName(ctx.loop).resolve()}();
+				return macro @:pos(e.pos) ${breakName(ctx.loop).resolve()}();
 			case EContinue:
-				return macro ${continueName(ctx.loop).resolve()}();
+				return macro @:pos(e.pos) ${continueName(ctx.loop).resolve()}();
 			case ETry(e1, catches):
 				var wrapper = new AsyncWrapper(ctx, next);
 				var name = tmpVar();
@@ -232,21 +250,30 @@ class AsyncField {
 				return bundle([wrapper.declaration, declaration, entry]);
 			case EReturn(e1):
 				ctx.needsResult = true;
+				if (!ctx.asyncReturn)
+					Context.error('Cannot return in @await field', e.pos);
 				return process(e1, ctx, function(transformed)
 					return macro @:pos(e.pos)
 						return __return(tink.core.Outcome.Success($transformed))
 				);
 			case EThrow(e1):
 				ctx.needsResult = true;
-				if (ctx.catcher != null)
-					return process(e1, ctx, function(transformed)
-						return macro @:pos(e.pos)
-							return ${ctx.catcher.resolve()}($transformed)
-					);
-				return process(e1, ctx, function(transformed)
-					return macro @:pos(e.pos)
-						return __return(tink.core.Outcome.Failure($transformed))
-				);
+				return
+					if (ctx.catcher != null)
+						process(e1, ctx, function(transformed)
+							return macro @:pos(e.pos)
+								return ${ctx.catcher.resolve()}($transformed)
+						);
+					else if (ctx.asyncReturn)
+						process(e1, ctx, function(transformed)
+							return macro @:pos(e.pos)
+								return __return(tink.core.Outcome.Failure($transformed))
+						);
+					else
+						process(e1, ctx, function(transformed)
+							return macro @:pos(e.pos)
+								throw $transformed
+						);
 			case ETernary(econd, eif, eelse) |
 				 EIf (econd, eif, eelse):
 				if (!hasAwait([eif, eelse])) {
@@ -396,13 +423,19 @@ class AsyncWrapper {
 
 class AwaitBuilder {
 	
+	public static inline function isAwait(keyword: String)
+		return keyword == 'await' || keyword == ':await';
+		
+	public static inline function isAsync(keyword: String)
+		return keyword == 'async' || keyword == ':async';
+	
 	static function processField(field: Field): Field {
 		switch field.kind {
 			case FieldType.FFun(f):
 				if (field.meta != null)
 					for (meta in field.meta)
-						if (meta.name == 'async' || meta.name == ':async') {
-							var flow = new AsyncField(f);
+						if (isAsync(meta.name) || isAwait(meta.name)) {
+							var flow = new AsyncField(f, isAsync(meta.name));
 							var processed = flow.transform();
 							#if debug
 							Sys.println('==================================');
