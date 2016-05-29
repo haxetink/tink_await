@@ -316,6 +316,7 @@ class AsyncField {
 					return next(EObjectDecl(transformedObjs).at(e.pos))
 				);
 			case EVars(obj):
+				ctx.needsResult = true;
 				return transformObj(obj, ctx, function(transformedObjs)
 					return next(EVars(transformedObjs).at(e.pos))
 				);

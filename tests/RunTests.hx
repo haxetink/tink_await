@@ -6,6 +6,7 @@ import haxe.Timer;
 using buddy.Should;
 using tink.CoreApi;
 
+@colors
 class RunTests extends buddy.SingleSuite implements Await {
 
 	public function new() {
@@ -48,6 +49,13 @@ class RunTests extends buddy.SingleSuite implements Await {
 			it('should return the result of an async try/catch', function (done) {
 				asyncTryCatchReturn().handle(function(outcome) {
 					outcome.should.equal(Success(true));
+					done();
+				});
+			});
+			
+			it('should return the result in a typed var', function (done) {
+				varResult().handle(function(outcome) {
+					outcome.should.equal(Success(1));
 					done();
 				});
 			});
@@ -154,13 +162,21 @@ class RunTests extends buddy.SingleSuite implements Await {
 				@await waitForIt();
 			default:
 				false;
-		}
+		}		
 		
 	@async function asyncExpressionReturn() {
 		var a = {
 			var b = @await waitForIt();
 			b;
 		};
+		return a;
+	}
+	
+	@async function varResult() {
+		var a: Int = switch @await waitForIt() {
+			case true: 1;
+			default: 2;
+		}
 		return a;
 	}
 	
