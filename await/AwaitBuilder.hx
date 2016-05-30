@@ -9,6 +9,7 @@ import await.AwaitBuilder.*;
 using tink.CoreApi;
 using tink.MacroApi;
 using Lambda;
+using await.MacroTools.MacroExprTools;
 
 typedef AsyncContext = {
 	?catcher: String,
@@ -149,10 +150,14 @@ class AsyncField {
 		
 		switch e.expr {
 			case EBlock(el):
+				var needsResult = ctx.needsResult;
+				ctx.needsResult = false;
 				if (el.length == 0) return emptyExpr();
 				function line(i:Int): Expr {
-					if (i == el.length - 1)
+					if (i == el.length - 1) {
+						ctx.needsResult = needsResult;
 						return process(el[i], ctx, next);
+					}
 					
 					return process(el[i], ctx, function(transformed: Expr) {
 						var response = [transformed];
@@ -172,6 +177,13 @@ class AsyncField {
 						$transformed.handle(${handler(tmp, ctx, next)})
 				);
 			case EFor(it, expr):
+				if (!hasAwait(expr)) {
+					ctx.loop = null;
+					ctx.needsResult = false;
+					return process(it, ctx, function(transformed)
+						return next(EFor(transformed, processControl(expr, ctx)).at(e.pos))
+					);
+				}
 				switch it.expr {
 					case EIn(e1, e2):
 						var ident = e1.getIdent().sure();
@@ -295,17 +307,24 @@ class AsyncField {
 					return bundle([wrapper.declaration, entry]);
 				});
 			case ESwitch(e1, cases, edef):
+				if (!hasAwait(e))
+					return next(processControl(e, ctx));
 				var wrapper = new AsyncWrapper(ctx, next);
 				return process(e1, ctx, function(transformed) {
 					var transformedCases = [
 						for (c in cases)
-							if (c.expr == null) {expr: wrapper.invocation(emptyExpr()), guard: c.guard, values: c.values}
-							else {expr: process(c.expr, ctx, wrapper.invocation), guard: c.guard, values: c.values}
+							if (c.expr == null) {
+								if (ctx.needsResult) Context.error('Case '+c.guard+' needs a return value', e1.pos);
+								{expr: wrapper.invocation(emptyExpr()).at(e1.pos), guard: c.guard, values: c.values}
+							}
+							else {expr: process(c.expr, ctx, wrapper.invocation).at(c.expr.pos), guard: c.guard, values: c.values}
 					];
 					var transformedDefault = switch edef {
-						case null: emptyExpr();
-						case def if (def.expr == null): wrapper.invocation(emptyExpr());
-						default: process(edef, ctx, wrapper.invocation);
+						case null: null;
+						case def if (def.expr == null): 
+							if (ctx.needsResult) Context.error('Default case needs a return value', e1.pos);
+							wrapper.invocation(emptyExpr()).at(e1.pos);
+						default: process(edef, ctx, wrapper.invocation).at(e1.pos);
 					}
 					var entry = ESwitch(transformed, transformedCases, transformedDefault).at(e.pos);
 					return bundle([wrapper.declaration, entry]);

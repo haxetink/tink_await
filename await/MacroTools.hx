@@ -4,6 +4,13 @@ import haxe.macro.Expr;
 using tink.CoreApi;
 using tink.MacroApi;
 
+class MacroExprTools {
+	public static function at(e: Expr, pos: Position) {
+		e.pos = pos;
+		return e;
+	}
+}
+
 class MacroTools {
 	static var count = 0;
 	
