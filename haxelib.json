@@ -4,8 +4,8 @@
   "license": "MIT",
   "tags": ["cross", "web"],
   "description": "Haxe async/await",
-  "version": "0.0.4",
-  "releasenote": "Fix empty result in var",
+  "version": "0.0.5",
+  "releasenote": "Fix switch transformation",
   "contributors": ["benmerckx"],
   "classPath": "",
   "dependencies": {
