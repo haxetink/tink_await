@@ -76,7 +76,7 @@ class AsyncField {
 				catcher.resolve().call([macro @:pos(pos) (e: await.Error)]);
 		
 	function handler(tmp: String, ctx: AsyncContext, next: Expr -> Expr): Expr {
-		var body = unpack(next(macro await.FutureTools.getValue(${tmp.resolve()})));
+		var body = unpack(next(macro await.OutcomeTools.getValue(${tmp.resolve()})));
 		if (ctx.asyncReturn || ctx.catcher != null)
 			body = macro @:pos(body.pos)
 				try $body 
