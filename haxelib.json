@@ -1,15 +1,16 @@
 {
-  "name": "await",
-  "url" : "https://github.com/benmerckx/await",
+  "name": "tink_await",
+  "url" : "https://github.com/haxetink/tink_await",
   "license": "MIT",
-  "tags": ["cross", "web"],
+  "tags": ["tink", "cross", "utility", "sugar", "async"],
   "description": "Haxe async/await",
-  "version": "0.0.5",
-  "releasenote": "Fix switch transformation",
+  "version": "0.1.0",
+  "releasenote": "Rename tink_await",
   "contributors": ["benmerckx"],
-  "classPath": "",
+  "classPath": "src",
   "dependencies": {
     "tink_macro": "",
-    "tink_core": ""
+    "tink_core": "",
+    "tink_syntaxhub": ""
   }
 }

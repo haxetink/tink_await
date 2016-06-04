@@ -1,6 +1,6 @@
-# await
+# tink_await
 
-[![Build Status](https://travis-ci.org/benmerckx/await.svg?branch=master)](https://travis-ci.org/benmerckx/await)
+[![Build Status](https://travis-ci.org/haxetink/tink_await.svg?branch=master)](https://travis-ci.org/haxetink/tink_await)
 	
 Async/await for [tink_core](https://github.com/haxetink/tink_core) futures.
 
@@ -11,7 +11,7 @@ Async/await for [tink_core](https://github.com/haxetink/tink_core) futures.
 
 ## Usage
 
-Install with `haxelib install await` and use it in your hxml with `-lib await`. Implement `await.Await` and all methods with `@async` metadata in your class will be transformed.
+Install with `haxelib install tink_await` and use it in your hxml with `-lib tink_await`. Mark a class or interface as `@await` and all methods with `@async` metadata in your class will be transformed.
 
 Any expression which returns a [`Future`](https://github.com/haxetink/tink_core#future) can be handled with `@await`. The example above will be transformed to something like this (there's a bit more boilerplate code which I'm omitting here):
 

@@ -1,13 +1,13 @@
 package;
 
-import await.Await;
 import haxe.Timer;
 
 using buddy.Should;
 using tink.CoreApi;
 
+@await
 @colors
-class RunTests extends buddy.SingleSuite implements Await {
+class RunTests extends buddy.SingleSuite {
 
 	public function new() {
 		describe('TestAwait', {
