@@ -72,7 +72,7 @@ An @async function always returns a [`Surprise<Data, Error>`](https://github.com
 }
 ```
 
-This would result in the function returning a `Surprise<String, String>`. If you use this test function in another @async function the failure can 'bubble up'. 
+This would result in the function returning a `Surprise<String, Error>`. If you use this test function in another @async function the failure can 'bubble up'. 
 
 ```haxe
 @async function getBuildLines() {
@@ -88,7 +88,7 @@ The result of the getBuildFile call will automatically be unpacked. Which means 
   try {
     var buildFile = @await getBuildFile();
     return buildFile.split('\n');
-  } catch (e: String) {
+  } catch (e: Error) {
     return [];
   }
 }
@@ -113,7 +113,7 @@ function() {
 
 ## Typing @async functions
 
-An @async function's return type will also be transformed. The following function will result in a return type of `Surprise<String, Unknown<0>>`
+An @async function's return type will also be transformed. The following function will result in a return type of `Surprise<String, Error>`
 
 ```haxe
 @async function(): String {

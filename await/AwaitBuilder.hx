@@ -33,16 +33,17 @@ class AsyncField {
 	public function transform(): Function {
 		var unknown = expr.pos.makeBlankType();
 		var type = func.ret == null ? unknown : func.ret;
+		var err = (macro: await.Error);
 		return {
 			args: func.args,
 			params: func.params,
-			ret: !asyncReturn || func.ret == null ? func.ret : (macro: tink.core.Future<tink.core.Outcome<$type, $unknown>>),
+			ret: !asyncReturn || func.ret == null ? func.ret : (macro: tink.core.Future<tink.core.Outcome<$type, $err>>),
 			expr: 
 				if (asyncReturn)
 					macro @:pos(expr.pos)
 						return tink.core.Future.async(function(__return) 
 							try ${process(expr, {asyncReturn: true, needsResult: false}, function(e) return e)}
-							catch(e: Dynamic) ${catchCall(null)}
+							catch(e: Dynamic) ${catchCall(null, expr.pos)}
 						)
 				else
 					process(expr, {asyncReturn: false, needsResult: false}, function(e) return e)
@@ -67,17 +68,19 @@ class AsyncField {
 		}
 	}
 		
-	function catchCall(catcher: Null<String>)
+	function catchCall(catcher: Null<String>, pos: Position)
 		return 
 			if (catcher == null) 
-				macro __return(tink.core.Outcome.Failure(e))
+				macro @:pos(pos) __return(tink.core.Outcome.Failure((e: await.Error)))
 			else 
-				catcher.resolve().call(['e'.resolve()]);
+				catcher.resolve().call([macro @:pos(pos) (e: await.Error)]);
 		
 	function handler(tmp: String, ctx: AsyncContext, next: Expr -> Expr): Expr {
 		var body = unpack(next(macro await.FutureTools.getValue(${tmp.resolve()})));
 		if (ctx.asyncReturn || ctx.catcher != null)
-			body = macro try $body catch(e: Dynamic) ${catchCall(ctx.catcher)};
+			body = macro @:pos(body.pos)
+				try $body 
+				catch(e: Dynamic) ${catchCall(ctx.catcher, body.pos)};
 		return body.func([tmp.toArg()], false).asExpr();
 	}
 	
@@ -123,10 +126,10 @@ class AsyncField {
 				return
 					if (ctx.catcher != null)
 						macro @:pos(e.pos)
-							return ${ctx.catcher.resolve()}($e1)
+							return ${ctx.catcher.resolve()}(($e1: await.Error))
 					else if (ctx.asyncReturn)
 						macro @:pos(e.pos)
-							return __return(tink.core.Outcome.Failure($e1))
+							return __return(tink.core.Outcome.Failure(($e1: await.Error)))
 					else
 						macro @:pos(e.pos)
 							throw $e1
@@ -278,12 +281,12 @@ class AsyncField {
 					if (ctx.catcher != null)
 						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
-								return ${ctx.catcher.resolve()}($transformed)
+								return ${ctx.catcher.resolve()}(($transformed: await.Error))
 						);
 					else if (ctx.asyncReturn)
 						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
-								return __return(tink.core.Outcome.Failure($transformed))
+								return __return(tink.core.Outcome.Failure(($transformed: await.Error)))
 						);
 					else
 						process(e1, ctx, function(transformed)
