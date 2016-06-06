@@ -52,7 +52,7 @@ class Await {
 						if (isAsync(meta.name) || isAwait(meta.name)) {
 							var async = new AsyncField(func, isAsync(meta.name));
 							var processed = async.transform();
-							#if debug
+							#if tink_await_debug
 							Sys.println('==================================');
 							Sys.println(field.name);
 							Sys.println('==================================');
