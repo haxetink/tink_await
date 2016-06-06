@@ -90,10 +90,7 @@ class RunTests extends buddy.SingleSuite {
 			
 			it('should transform exceptions', function (done) {
 				throwError().handle(function(outcome) {
-					switch outcome {
-						case Failure(e): e.data.should.be('error');
-						default: throw 'Failure expected';
-					}
+					outcome.should.equal(Failure('error'));
 					done();
 				});
 			});
@@ -111,10 +108,7 @@ class RunTests extends buddy.SingleSuite {
 			
 			it('should pass exceptions', function (done) {
 				passError().handle(function(outcome) {
-					switch outcome {
-						case Failure(e): e.data.should.be('error');
-						default: throw 'Failure expected';
-					}
+					outcome.should.equal(Failure('error'));
 					done();
 				});
 			});
@@ -187,10 +181,10 @@ class RunTests extends buddy.SingleSuite {
 	}
 	
 	@async function asyncTryCatchReturn()
-		return try @await waitForIt() catch (e: Error) false;
+		return try @await waitForIt() catch (e: Dynamic) false;
 	
 	@async function asyncTryCatchReturnNegative()
-		return try @await passError() catch (e: Error) false;
+		return try @await passError() catch (e: Dynamic) false;
 		
 	@async function reachNext() {
 		var outcome = 0;
@@ -252,8 +246,8 @@ class RunTests extends buddy.SingleSuite {
 		try {
 			@await waitForIt();
 			@await passError();
-		} catch (e: Error) {
-			response = e.data;
+		} catch (e: String) {
+			response = e;
 		}
 		return response;
 	}
