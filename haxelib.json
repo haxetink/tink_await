@@ -4,8 +4,8 @@
   "license": "MIT",
   "tags": ["tink", "cross", "utility", "sugar", "async"],
   "description": "Haxe async/await",
-  "version": "0.1.1",
-  "releasenote": "Rename tink_await",
+  "version": "0.1.2",
+  "releasenote": "Allow transforming the constructor",
   "contributors": ["benmerckx"],
   "classPath": "src",
   "dependencies": {
