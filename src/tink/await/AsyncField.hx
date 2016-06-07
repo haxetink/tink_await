@@ -154,7 +154,7 @@ class AsyncField {
 			case EBlock(el):
 				var needsResult = ctx.needsResult;
 				ctx.needsResult = false;
-				if (el.length == 0) return emptyExpr();
+				if (el.length == 0) return next(emptyExpr());
 				function line(i:Int): Expr {
 					if (i == el.length - 1) {
 						ctx.needsResult = needsResult;
