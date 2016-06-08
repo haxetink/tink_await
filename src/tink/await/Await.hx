@@ -45,15 +45,17 @@ class Await {
 	static function applyTo(builder: ClassBuilder) {
 		for (member in builder)
 			processMember(member);
-		var constructor = builder.getConstructor();
-		for (meta in constructor.meta)
-			if (isAwait(meta.name))
-				constructor.onGenerate(function(func) {
-					var processed = transform(func, false);
-					func.expr = processed.expr;
-				});
-			else if (isAsync(meta.name))
-				haxe.macro.Context.error('@async not allowed on constructor', constructor.pos);
+		if(builder.hasConstructor()) {
+			var constructor = builder.getConstructor();
+			for (meta in constructor.meta)
+				if (isAwait(meta.name))
+					constructor.onGenerate(function(func) {
+						var processed = transform(func, false);
+						func.expr = processed.expr;
+					});
+				else if (isAsync(meta.name))
+					haxe.macro.Context.error('@async not allowed on constructor', constructor.pos);
+		}
 	}
 	
 	static function transform(func: Function, async: Bool): Function {
