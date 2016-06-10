@@ -6,9 +6,9 @@ using tink.CoreApi;
 
 class OutcomeTools {
 	
-	public static function getValue<A, F>(?outcome: tink.core.Outcome<A, F>, ?value: A): A {
-		if (outcome == null) return value;
-		return outcome.sure();
+	public static function getOutcome<A, F>(?outcome: tink.core.Outcome<A, F>, ?value: A): Outcome<A, F> {
+		if (outcome == null) return Success(value);
+		return outcome;
 	}
 	
 }

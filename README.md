@@ -121,6 +121,10 @@ An @async function's return type will also be transformed. The following functio
 }
 ```
 
+## Flags
+
+- `-D await_catch_none`: Unexpected exceptions are never caught.
+
 ## Credits
 
 I used [haxe-continuation](https://github.com/Atry/haxe-continuation) as a guideline for getting this done. It is a solid alternative if you're working with callbacks, such as the nodejs api.

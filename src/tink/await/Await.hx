@@ -58,9 +58,15 @@ class Await {
 		}
 	}
 	
-	static function transform(func: Function, async: Bool): Function {
+	static function transform(func: Function, async: Bool, ?name: String): Function {
 		var async = new AsyncField(func, async);
 		var processed = async.transform();
+		#if await_debug
+		Sys.println('=======================');
+		Sys.println(name);
+		Sys.println('=======================');
+		Sys.println(processed.expr.toString());
+		#end
 		return processed;
 	}
 	
@@ -71,7 +77,7 @@ class Await {
 				if (field.meta != null)
 					for (meta in field.meta) {
 						if (isAsync(meta.name) || isAwait(meta.name)) {
-							field.kind = FieldType.FFun(transform(func, isAsync(meta.name)));
+							field.kind = FieldType.FFun(transform(func, isAsync(meta.name), field.name));
 						}
 					}
 			default:

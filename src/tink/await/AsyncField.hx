@@ -41,8 +41,12 @@ class AsyncField {
 				if (asyncReturn)
 					macro @:pos(expr.pos)
 						return tink.core.Future.async(function(__return) 
+							#if await_catch_none
+							${process(expr, {asyncReturn: true, needsResult: false}, function(e) return e)}
+							#else
 							try ${process(expr, {asyncReturn: true, needsResult: false}, function(e) return e)}
 							catch(e: Dynamic) ${catchCall(null, expr.pos)}
+							#end
 						)
 				else
 					process(expr, {asyncReturn: false, needsResult: false}, function(e) return e)
@@ -75,11 +79,25 @@ class AsyncField {
 				catcher.resolve().call([macro @:pos(pos) e]);
 		
 	function handler(tmp: String, ctx: AsyncContext, next: Expr -> Expr): Expr {
-		var body = unpack(next(macro tink.await.OutcomeTools.getValue(${tmp.resolve()})));
+		var catchErr = catchCall(ctx.catcher, Context.currentPos());
+		var fail = ctx.asyncReturn
+			? catchErr
+			: macro throw e;
+		var result = tmp+'_result';
+		var body = macro {
+			var $result;
+			switch tink.await.OutcomeTools.getOutcome(${tmp.resolve()}) {
+				case Success(v): $i{result} = v;
+				case Failure(e): $fail; return;
+			}
+			${next(result.resolve())}
+		};
+		#if !await_catch_none
 		if (ctx.asyncReturn || ctx.catcher != null)
 			body = macro @:pos(body.pos)
 				try $body 
 				catch(e: Dynamic) ${catchCall(ctx.catcher, body.pos)};
+		#end
 		return body.func([tmp.toArg()], false).asExpr();
 	}
 	
