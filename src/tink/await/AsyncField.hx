@@ -62,7 +62,7 @@ class AsyncField {
 		}
 		if (e == null) return false;
 		switch e.expr {
-			case EMeta(m, em) if (isAwait(m.name)):
+			case EMeta(m, em) if (isAwait(m.name) || isAsync(m.name)):
 				return true;
 			default:
 				var await = false;
@@ -170,6 +170,8 @@ class AsyncField {
 		
 		switch e.expr {
 			case EBlock(el):
+				if (!hasAwait(e))
+					return next(processControl(e, ctx));
 				var needsResult = ctx.needsResult;
 				ctx.needsResult = false;
 				if (el.length == 0) return next(emptyExpr());
@@ -275,6 +277,7 @@ class AsyncField {
 					for (c in catches)
 						{type: c.type, name: c.name, expr: c.expr == null ? null : process(c.expr, ctx, wrapper.invocation)}
 				];
+				// Prevent rethrow
 				var body = ETry(macro throw e, transformedCatches).at(e.pos);
 				var func = body.func(['e'.toArg()]);
 				var declaration = EFunction(name, func).at(e.pos);
