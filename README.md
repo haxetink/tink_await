@@ -1,7 +1,8 @@
 # tink_await
 
 [![Build Status](https://travis-ci.org/haxetink/tink_await.svg?branch=master)](https://travis-ci.org/haxetink/tink_await)
-	
+[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg?maxAge=2592000)](https://gitter.im/haxetink/public)
+
 Async/await for [tink_core](https://github.com/haxetink/tink_core) futures.
 
 ```haxe
