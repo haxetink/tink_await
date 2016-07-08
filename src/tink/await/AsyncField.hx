@@ -136,9 +136,13 @@ class AsyncField {
 		if (e == null) return null;
 		switch e.expr {
 			case null: return null;
-			case EReturn(e1): 
-				return macro @:pos(e.pos)
-					return __return(tink.core.Outcome.Success($e1));
+			case EReturn(e1):
+				return
+					if (!ctx.asyncReturn)
+						e
+					else
+						macro @:pos(e.pos)
+							return __return(tink.core.Outcome.Success($e1));
 			case EThrow(e1): 
 				return
 					if (ctx.catcher != null)
@@ -289,11 +293,14 @@ class AsyncField {
 				return bundle([wrapper.declaration, declaration, entry]);
 			case EReturn(e1):
 				ctx.needsResult = true;
-				if (!ctx.asyncReturn)
-					Context.error('Cannot return in @await field', e.pos);
+				// Todo: refine control here, returns could be allowed until an async operation happens
 				return process(e1, ctx, function(transformed)
-					return macro @:pos(e.pos)
-						return __return(tink.core.Outcome.Success($transformed))
+					return
+						if (!ctx.asyncReturn)
+							EReturn(transformed).at(e.pos)
+						else
+							macro @:pos(e.pos)
+								return __return(tink.core.Outcome.Success($transformed))
 				);
 			case EThrow(e1):
 				ctx.needsResult = true;
