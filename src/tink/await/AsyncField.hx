@@ -176,14 +176,12 @@ class AsyncField {
 	
 	function process(e: Expr, ctx: AsyncContext, next: Expr -> Expr): Expr {
 		var result = loop(e, ctx, next);
-		do
-			switch result {
-				case Cont(thunk):
-					result = thunk();
-				case Done(v): 
-					return v;
-			}
-		while(true);
+		while(true) switch result {
+			case Cont(thunk):
+				result = thunk();
+			case Done(v): 
+				return v;
+		}
 	}
 		
 	function loop(e: Expr, ctx: AsyncContext, next: Expr -> Expr): Thunk<Expr> {
