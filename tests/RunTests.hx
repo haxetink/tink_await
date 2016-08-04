@@ -140,6 +140,11 @@ class RunTests extends buddy.SingleSuite {
 					done();
 				});
 			});
+			
+			it('should not cause stack overflow', function (done) {
+				// If this compiles, we're good :)
+				done();
+			});
 		});
 	}
 	
@@ -266,6 +271,23 @@ class RunTests extends buddy.SingleSuite {
 	@await function awaitField(done) {
 		var response = @await waitForIt();
 		done(response);
+	}
+	
+	// https://github.com/haxetink/tink_await/issues/11
+	@await function issue11() {
+		var api: Dynamic = {};
+		var data = {
+			b0: @await api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b1: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b2: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b3: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b4: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b5: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b6: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b7: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b8: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool(),
+			b9: api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.api.main.bool()
+		}
 	}
 	
 	function waitForIt() {
