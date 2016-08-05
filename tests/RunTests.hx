@@ -275,7 +275,7 @@ class RunTests extends buddy.SingleSuite {
 	
 	// https://github.com/haxetink/tink_await/issues/11
 	@await function issue11() {
-		/*var data = {
+		var data = {
 			b0: @await waitForIt(),
 			b1: @await waitForIt(),
 			b2: @await waitForIt(),
@@ -374,7 +374,7 @@ class RunTests extends buddy.SingleSuite {
 			b87: @await waitForIt(),
 			b88: @await waitForIt(),
 			b89: @await waitForIt()
-		}*/
+		}
 	}
 	
 	function waitForIt() {

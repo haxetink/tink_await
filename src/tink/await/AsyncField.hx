@@ -79,7 +79,7 @@ class AsyncField {
 			else 
 				catcher.resolve().call([macro @:pos(pos) e]);
 		
-	function handler(tmp: String, ctx: AsyncContext, next: Expr -> Expr): Expr {
+	function handler(tmp: String, ctx: AsyncContext, next: Expr -> Thunk<Expr>): Thunk<Expr> {
 		var catchErr = catchCall(ctx.catcher, Context.currentPos());
 		var fail = ctx.asyncReturn
 			? catchErr
@@ -102,9 +102,9 @@ class AsyncField {
 		return body.func([tmp.toArg()], false).asExpr();
 	}
 	
-	function transformObj<T: {expr: Expr}>(ol: Array<T>, ctx: AsyncContext, final: Array<T> -> Expr): Expr {
+	function transformObj<T: {expr: Expr}>(ol: Array<T>, ctx: AsyncContext, final: Array<T> -> Thunk<Expr>): Thunk<Expr> {
 		var el = ol.map(function(v) return v.expr);
-		return transformList(el, ctx, function(transformedEl: Array<Expr>){
+		return function() return transformList(el, ctx, function(transformedEl: Array<Expr>){
 			return final({
 				var i = 0;
 				ol.map(function(v) {
@@ -116,7 +116,7 @@ class AsyncField {
 		});
 	}
 	
-	function transformList(el: Array<Expr>, ctx: AsyncContext, final: Array<Expr> -> Expr): Expr {
+	function transformList(el: Array<Expr>, ctx: AsyncContext, final: Array<Expr> -> Thunk<Expr>): Thunk<Expr> {
 		function transformNext(i: Int, transformedEl: Array<Expr>): Thunk<Expr> {
 			if (i == el.length)
 				return final(transformedEl);
@@ -124,13 +124,13 @@ class AsyncField {
 				transformedEl.push(null);
 				return function() return transformNext(i + 1, transformedEl);
 			}
-			return function() return loop(el[i], ctx, function(transformed: Expr): Expr {
+			return function() return process(el[i], ctx, function(transformed: Expr): Thunk<Expr> {
 				transformedEl.push(transformed);
-				return transformNext(i + 1, transformedEl);
+				return function() return transformNext(i + 1, transformedEl);
 			});
 		}
 		
-		return transformNext(0, []);
+		return function() return transformNext(0, []);
 	}
 	
 	function processControl(e: Expr, ctx: AsyncContext): Expr {
@@ -170,51 +170,45 @@ class AsyncField {
 	function continueName(loop) return loop+'_continue';
 	function breakName(loop) return loop+'_break';
 	
-	function process(e: Expr, ctx: AsyncContext, next: Expr -> Expr): Expr {
-		return loop(e, ctx, next);
-	}
-		
-	function loop(e: Expr, ctx: AsyncContext, next: Expr -> Expr): Thunk<Expr> {
-		//trace(haxe.CallStack.callStack().length);
-		//trace(e);
-		if (e == null) return next(null);
+	function process(e: Expr, ctx: AsyncContext, next: Expr -> Thunk<Expr>): Thunk<Expr> {
+		if (e == null) return function() return next(null);
 		ctx = Reflect.copy(ctx);
 		switch e.expr {
 			case EBlock(el):
 				if (!hasAwait(e))
-					return next(processControl(e, ctx));
+					return function() return next(processControl(e, ctx));
 				var needsResult = ctx.needsResult;
 				ctx.needsResult = false;
-				if (el.length == 0) return next(emptyExpr());
-				function line(i:Int): Expr {
+				if (el.length == 0) return function() return next(emptyExpr());
+				function line(i:Int): Thunk<Expr> {
 					if (i == el.length - 1) {
 						ctx.needsResult = needsResult;
-						return process(el[i], ctx, next);
+						return function() return process(el[i], ctx, next);
 					}
 					
-					return process(el[i], ctx, function(transformed: Expr) {
+					return function() return process(el[i], ctx, function(transformed: Expr) {
 						var response = [transformed];
 						response.push(line(i+1));
-						return bundle(response);
+						return function() return bundle(response);
 				  });
 				}
-				return line(0);
+				return function() return line(0);
 			case EMeta(m, {expr: EFunction(name, f), pos: pos}) if (isAsync(m.name)):
-				return next(EFunction(name, new AsyncField(f, true).transform()).at(pos));
+				return function() return next(EFunction(name, new AsyncField(f, true).transform()).at(pos));
 			case EMeta(m, {expr: EFunction(name, f), pos: pos}) if (isAwait(m.name)):
-				return next(EFunction(name, new AsyncField(f, false).transform()).at(pos));
+				return function() return next(EFunction(name, new AsyncField(f, false).transform()).at(pos));
 			case EMeta(m, em) if (isAwait(m.name)):
 				var tmp = tmpVar();
-				return function() return loop(em, ctx, function(transformed)
-					return macro @:pos(em.pos)
+				return function() return process(em, ctx, function(transformed)
+					return function() return macro @:pos(em.pos)
 						$transformed.handle(${handler(tmp, ctx, next)})
 				);
 			case EFor(it, expr):
 				if (!hasAwait(expr)) {
 					ctx.loop = null;
 					ctx.needsResult = false;
-					return function() return loop(it, ctx, function(transformed)
-						return next(EFor(transformed, processControl(expr, ctx)).at(e.pos))
+					return function() return process(it, ctx, function(transformed)
+						return function() return next(EFor(transformed, processControl(expr, ctx)).at(e.pos))
 					);
 				}
 				switch it.expr {
@@ -234,8 +228,8 @@ class AsyncField {
 				if (!hasAwait(e1)) {
 					ctx.loop = null;
 					ctx.needsResult = false;
-					return function() return loop(econd, ctx, function(tcond)
-						return next(EWhile(tcond, processControl(e1, ctx), normalWhile).at(e.pos))
+					return function() return process(econd, ctx, function(tcond)
+						return function() return next(EWhile(tcond, processControl(e1, ctx), normalWhile).at(e.pos))
 					);
 				}
 				var loop = tmpVar();
@@ -286,7 +280,7 @@ class AsyncField {
 				ctx.catcher = null;
 				var transformedCatches = [
 					for (c in catches)
-						{type: c.type, name: c.name, expr: c.expr == null ? null : process(c.expr, ctx, wrapper.invocation)}
+						{type: c.type, name: c.name, expr: c.expr == null ? null : (process(c.expr, ctx, wrapper.invocation): Expr)}
 				];
 				// Prevent rethrow
 				var body = ETry(macro throw e, transformedCatches).at(e.pos);
@@ -297,11 +291,11 @@ class AsyncField {
 				var entry = process(e1, ctx, wrapper.invocation);
 				entry = macro @:pos(e.pos)
 					try $entry catch(e: Dynamic) $call;
-				return bundle([wrapper.declaration, declaration, entry]);
+				return function() return bundle([wrapper.declaration, declaration, entry]);
 			case EReturn(e1):
 				ctx.needsResult = true;
 				// Todo: refine control here, returns could be allowed until an async operation happens
-				return function() return loop(e1, ctx, function(transformed)
+				return function() return process(e1, ctx, function(transformed)
 					return
 						if (!ctx.asyncReturn)
 							EReturn(transformed).at(e.pos)
@@ -313,29 +307,29 @@ class AsyncField {
 				ctx.needsResult = true;
 				return function() return 
 					if (ctx.catcher != null)
-						loop(e1, ctx, function(transformed)
+						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
 								return ${ctx.catcher.resolve()}($transformed)
 						);
 					else if (ctx.asyncReturn)
-						loop(e1, ctx, function(transformed)
+						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
 								return __return(tink.core.Outcome.Failure($transformed))
 						);
 					else
-						loop(e1, ctx, function(transformed)
+						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
 								throw $transformed
 						);
 			case ETernary(econd, eif, eelse) |
 				 EIf (econd, eif, eelse):
 				if (!hasAwait([eif, eelse])) {
-					return function() return loop(econd, ctx, function(tcond)
-						return next(EIf(tcond, processControl(eif, ctx), processControl(eelse, ctx)).at(e.pos))
+					return function() return process(econd, ctx, function(tcond)
+						return function() return next(EIf(tcond, processControl(eif, ctx), processControl(eelse, ctx)).at(e.pos))
 					);
 				}
 				var wrapper = new AsyncWrapper(ctx, next);
-				return function() return loop(econd, ctx, function(transformed) {
+				return function() return process(econd, ctx, function(transformed) {
 					var entry = EIf(
 						transformed,
 						process(eif, ctx, wrapper.invocation),
@@ -345,9 +339,9 @@ class AsyncField {
 				});
 			case ESwitch(e1, cases, edef):
 				if (!hasAwait(e))
-					return next(processControl(e, ctx));
+					return function() return next(processControl(e, ctx));
 				var wrapper = new AsyncWrapper(ctx, next);
-				return function() return loop(e1, ctx, function(transformed) {
+				return function() return process(e1, ctx, function(transformed) {
 					var transformedCases = [
 						for (c in cases)
 							if (c.expr == null) {
@@ -364,80 +358,80 @@ class AsyncField {
 						default: process(edef, ctx, wrapper.invocation).at(e1.pos);
 					}
 					var entry = ESwitch(transformed, transformedCases, transformedDefault).at(e.pos);
-					return bundle([wrapper.declaration, entry]);
+					return function() return bundle([wrapper.declaration, entry]);
 				});
 			case EObjectDecl(obj):
 				ctx.needsResult = true;
-				return transformObj(obj, ctx, function(transformedObjs)
-					return next(EObjectDecl(transformedObjs).at(e.pos))
+				return function() return transformObj(obj, ctx, function(transformedObjs)
+					return function() return next(EObjectDecl(transformedObjs).at(e.pos))
 				);
 			case EVars(obj):
 				ctx.needsResult = true;
-				return transformObj(obj, ctx, function(transformedObjs)
-					return next(EVars(transformedObjs).at(e.pos))
+				return function() return transformObj(obj, ctx, function(transformedObjs)
+					return function() return next(EVars(transformedObjs).at(e.pos))
 				);
 			case EUntyped(e1):
-				return function() return loop(e1, ctx, function(transformed)
-					return next(EUntyped(transformed).at(e.pos))
+				return function() return process(e1, ctx, function(transformed)
+					return function() return next(EUntyped(transformed).at(e.pos))
 				);
 			case ECast(e1, t):
 				ctx.needsResult = true;
-				return function() return loop(e1, ctx, function(transformed)
-					return next(ECast(transformed, t).at(e.pos))
+				return function() return process(e1, ctx, function(transformed)
+					return function() return next(ECast(transformed, t).at(e.pos))
 				);
 			case EBinop(op, e1, e2):
 				ctx.needsResult = true;
-				return function() return loop(e1, ctx, function(t1)
-					return process(e2, ctx, function(t2)
-						return next(EBinop(op, t1, t2).at(e.pos))
+				return function() return process(e1, ctx, function(t1)
+					return function() return process(e2, ctx, function(t2)
+						return function() return next(EBinop(op, t1, t2).at(e.pos))
 					)
 				);
 			case EParenthesis(e1):
-				return function() return loop(e1, ctx, function(t1)
-					return next(EParenthesis(t1).at(e.pos))
+				return function() return process(e1, ctx, function(t1)
+					return function() return next(EParenthesis(t1).at(e.pos))
 				);
 			case EArray(e1, e2):
 				ctx.needsResult = true;
-				return function() return loop(e1, ctx, function(t1)
-					return process(e2, ctx, function(t2)
-						return next(EArray(t1, t2).at(e.pos))
+				return function() return process(e1, ctx, function(t1)
+					return function() return process(e2, ctx, function(t2)
+						return function() return next(EArray(t1, t2).at(e.pos))
 					)
 				);
 			case EUnop(op, postFix, e1):
 				ctx.needsResult = true;
-				return function() return loop(e1, ctx, function(transformed)
-					return next(EUnop(op, postFix, transformed).at(e.pos))
+				return function() return process(e1, ctx, function(transformed)
+					return function() return next(EUnop(op, postFix, transformed).at(e.pos))
 				);
 			case EField(e1, field):
 				ctx.needsResult = true;
-				return function() return loop(e1, ctx, function(transformed)
-					return next(EField(transformed, field).at(e.pos))
+				return function() return process(e1, ctx, function(transformed)
+					return function() return next(EField(transformed, field).at(e.pos))
 				);
 			case ECheckType(e1, t):
 				ctx.needsResult = true;
-				return function() return loop(e1, ctx, function(transformed)
-					return next(ECheckType(transformed, t).at(e.pos))
+				return function() return process(e1, ctx, function(transformed)
+					return function() return next(ECheckType(transformed, t).at(e.pos))
 				);
 			case EArrayDecl(params):
 				ctx.needsResult = true;
-				return transformList(params, ctx, function(transformedParameters: Array<Expr>)
-					return next(EArrayDecl(transformedParameters).at(e.pos))
+				return function() return transformList(params, ctx, function(transformedParameters: Array<Expr>)
+					return function() return next(EArrayDecl(transformedParameters).at(e.pos))
 				);
 			case ECall(e1, params):
 				ctx.needsResult = true;
-				return transformList(params, ctx, function(transformedParameters: Array<Expr>)
-					return process(e1, ctx, function(transformed) 
-						return next(ECall(transformed, transformedParameters).at(e.pos))
+				return function() return transformList(params, ctx, function(transformedParameters: Array<Expr>)
+					return function() return process(e1, ctx, function(transformed) 
+						return function() return next(ECall(transformed, transformedParameters).at(e.pos))
 					)
 				);
 			case ENew(t, params):
 				ctx.needsResult = true;
-				return transformList(params, ctx, function(transformedParameters: Array<Expr>)
-					return next(ENew(t, transformedParameters).at(e.pos))
+				return function() return transformList(params, ctx, function(transformedParameters: Array<Expr>)
+					return function() return next(ENew(t, transformedParameters).at(e.pos))
 				);
 			default:
 		}
-		return unpack(next(e));
+		return function() return next(e);
 	}
 	
 }
@@ -450,7 +444,7 @@ class AsyncWrapper {
 	var argName: String;
 	var empty: Bool = false;
 	
-	public function new(ctx: AsyncContext, next: Expr -> Expr) {
+	public function new(ctx: AsyncContext, next: Expr -> Thunk<Expr>) {
 		this.ctx = ctx;
 		functionName = tmpVar();
 		argName = tmpVar();
@@ -458,7 +452,7 @@ class AsyncWrapper {
 		if (ctx.needsResult) {
 			func = next(argName.resolve()).func([argName.toArg()], false);
 		} else {
-			var body = next(emptyExpr());
+			var body: Expr = next(emptyExpr());
 			switch body.expr {
 				case EBlock([]): 
 					empty = true;
@@ -471,7 +465,7 @@ class AsyncWrapper {
 		declaration = EFunction(functionName, func).at();
 	}
 	
-	public function invocation(transformed: Expr): Expr {
+	public function invocation(transformed: Expr): Thunk<Expr> {
 		if (empty)
 			return transformed;
 		if (ctx.needsResult)
