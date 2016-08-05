@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["tink", "cross", "utility", "sugar", "async"],
   "description": "Haxe async/await",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "releasenote": "Use thunks to avoid hitting stack call limit",
   "contributors": ["benmerckx"],
   "classPath": "src",
