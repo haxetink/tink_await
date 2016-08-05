@@ -140,11 +140,6 @@ class RunTests extends buddy.SingleSuite {
 					done();
 				});
 			});
-			
-			it('should not cause stack overflow', function (done) {
-				// If this compiles, we're good :)
-				done();
-			});
 		});
 	}
 	
@@ -271,110 +266,6 @@ class RunTests extends buddy.SingleSuite {
 	@await function awaitField(done) {
 		var response = @await waitForIt();
 		done(response);
-	}
-	
-	// https://github.com/haxetink/tink_await/issues/11
-	@await function issue11() {
-		var data = {
-			b0: @await waitForIt(),
-			b1: @await waitForIt(),
-			b2: @await waitForIt(),
-			b3: @await waitForIt(),
-			b4: @await waitForIt(),
-			b5: @await waitForIt(),
-			b6: @await waitForIt(),
-			b7: @await waitForIt(),
-			b8: @await waitForIt(),
-			b9: @await waitForIt(),
-
-			b10: @await waitForIt(),
-			b11: @await waitForIt(),
-			b12: @await waitForIt(),
-			b13: @await waitForIt(),
-			b14: @await waitForIt(),
-			b15: @await waitForIt(),
-			b16: @await waitForIt(),
-			b17: @await waitForIt(),
-			b18: @await waitForIt(),
-			b19: @await waitForIt(),
-
-			b20: @await waitForIt(),
-			b21: @await waitForIt(),
-			b22: @await waitForIt(),
-			b23: @await waitForIt(),
-			b24: @await waitForIt(),
-			b25: @await waitForIt(),
-			b26: @await waitForIt(),
-			b27: @await waitForIt(),
-			b28: @await waitForIt(),
-			b29: @await waitForIt(),
-
-			b30: @await waitForIt(),
-			b31: @await waitForIt(),
-			b32: @await waitForIt(),
-			b33: @await waitForIt(),
-			b34: @await waitForIt(),
-			b35: @await waitForIt(),
-			b36: @await waitForIt(),
-			b37: @await waitForIt(),
-			b38: @await waitForIt(),
-			b39: @await waitForIt(),
-
-			b40: @await waitForIt(),
-			b41: @await waitForIt(),
-			b42: @await waitForIt(),
-			b43: @await waitForIt(),
-			b44: @await waitForIt(),
-			b45: @await waitForIt(),
-			b46: @await waitForIt(),
-			b47: @await waitForIt(),
-			b48: @await waitForIt(),
-			b49: @await waitForIt(),
-
-			b50: @await waitForIt(),
-			b51: @await waitForIt(),
-			b52: @await waitForIt(),
-			b53: @await waitForIt(),
-			b54: @await waitForIt(),
-			b55: @await waitForIt(),
-			b56: @await waitForIt(),
-			b57: @await waitForIt(),
-			b58: @await waitForIt(),
-			b59: @await waitForIt(),
-
-			b60: @await waitForIt(),
-			b61: @await waitForIt(),
-			b62: @await waitForIt(),
-			b63: @await waitForIt(),
-			b64: @await waitForIt(),
-			b65: @await waitForIt(),
-			b66: @await waitForIt(),
-			b67: @await waitForIt(),
-			b68: @await waitForIt(),
-			b69: @await waitForIt(),
-
-			b70: @await waitForIt(),
-			b71: @await waitForIt(),
-			b72: @await waitForIt(),
-			b73: @await waitForIt(),
-			b74: @await waitForIt(),
-			b75: @await waitForIt(),
-			b76: @await waitForIt(),
-			b77: @await waitForIt(),
-			b78: @await waitForIt(),
-			b79: @await waitForIt(),
-
-			b80: @await waitForIt(),
-			b81: @await waitForIt(),
-			b82: @await waitForIt(),
-			b83: @await waitForIt(),
-			b84: @await waitForIt(),
-			b85: @await waitForIt(),
-			b86: @await waitForIt(),
-			b87: @await waitForIt(),
-			b88: @await waitForIt(),
-			b89: @await waitForIt()
-		}
 	}
 	
 	function waitForIt() {
