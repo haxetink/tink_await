@@ -75,7 +75,7 @@ class AsyncField {
 	function catchCall(catcher: Null<String>, pos: Position)
 		return 
 			if (catcher == null) 
-				macro @:pos(pos) __return(tink.core.Outcome.Failure(e))
+				macro @:pos(pos) __return(tink.core.Outcome.Failure((e: Dynamic)))
 			else 
 				catcher.resolve().call([macro @:pos(pos) e]);
 		
@@ -151,7 +151,7 @@ class AsyncField {
 							return ${ctx.catcher.resolve()}($e1)
 					else if (ctx.asyncReturn)
 						macro @:pos(e.pos)
-							return __return(tink.core.Outcome.Failure($e1))
+							return __return(tink.core.Outcome.Failure(($e1: Dynamic)))
 					else
 						macro @:pos(e.pos)
 							throw $e1
@@ -284,7 +284,7 @@ class AsyncField {
 				];
 				// Prevent rethrow
 				var body = ETry(macro throw e, transformedCatches).at(e.pos);
-				var func = body.func(['e'.toArg()]);
+				var func = body.func(['e'.toArg((macro: Dynamic))]);
 				var declaration = EFunction(name, func).at(e.pos);
 				ctx.catcher = name;
 				var call = name.resolve().call(['e'.resolve()]);
