@@ -94,7 +94,7 @@ class RunTests extends buddy.SingleSuite {
 						case Success(_): fail('Expected Failure');
 						case Failure(e):
 							Std.is(e, Error).should.be(true);
-							(e.data == 'error').should.be(true);
+							e.data.should.be('error');
 					}
 					done();
 				});
@@ -117,7 +117,7 @@ class RunTests extends buddy.SingleSuite {
 						case Success(_): fail('Expected Failure');
 						case Failure(e):
 							Std.is(e, Error).should.be(true);
-							(e.data == 'error').should.be(true);
+							e.data.should.be('error');
 					}
 					done();
 				});
