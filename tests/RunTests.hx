@@ -90,7 +90,12 @@ class RunTests extends buddy.SingleSuite {
 			
 			it('should transform exceptions', function (done) {
 				throwError().handle(function(outcome) {
-					outcome.should.equal(Failure('error'));
+					switch outcome {
+						case Success(_): fail('Expected Failure');
+						case Failure(e):
+							utest.Assert.isTrue(Std.is(e, Error));
+							utest.Assert.isTrue(e.data == 'error');
+					}
 					done();
 				});
 			});
@@ -108,7 +113,12 @@ class RunTests extends buddy.SingleSuite {
 			
 			it('should pass exceptions', function (done) {
 				passError().handle(function(outcome) {
-					outcome.should.equal(Failure('error'));
+					switch outcome {
+						case Success(_): fail('Expected Failure');
+						case Failure(e):
+							utest.Assert.isTrue(Std.is(e, Error));
+							utest.Assert.isTrue(e.data == 'error');
+					}
 					done();
 				});
 			});
@@ -146,6 +156,14 @@ class RunTests extends buddy.SingleSuite {
 					outcome.should.equal(Success(123));
 					done();
 				});
+			});
+			
+			it('should return Promise', function (done) {
+				waitForIt().next(function(value) {
+					// if `waitForIt()` returns Surprise, `value` will be an Outcome
+					value.should.be(true);
+					return Noise;
+				}).handle(done);
 			});
 		});
 	}

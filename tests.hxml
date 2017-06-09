@@ -1,4 +1,5 @@
 -lib buddy
+-lib utest
 -cp src
 -cp tests
 -main RunTests
