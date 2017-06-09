@@ -83,7 +83,7 @@ class AsyncField {
 		var catchErr = catchCall(ctx.catcher, Context.currentPos());
 		var fail = ctx.asyncReturn
 			? catchErr
-			: macro throw $i{"$type"}(e).data;
+			: macro throw e.data;
 		var result = tmp+'_result';
 		var body = macro {
 			var $result;
@@ -154,7 +154,7 @@ class AsyncField {
 							return __return(tink.core.Outcome.Failure(tink.core.Error.withData('Error', $e1)))
 					else
 						macro @:pos(e.pos)
-							throw $i{"$type"}($e1).data
+							throw $e1.data
 				;
 			case EBreak if(ctx.loop != null):
 				return macro @:pos(e.pos)
@@ -319,7 +319,7 @@ class AsyncField {
 					else
 						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
-								throw $i{"$type"}($transformed).data
+								throw $transformed.data
 						);
 			case ETernary(econd, eif, eelse) |
 				 EIf (econd, eif, eelse):
