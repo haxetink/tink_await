@@ -140,6 +140,13 @@ class RunTests extends buddy.SingleSuite {
 					done();
 				});
 			});
+			
+			it('should process further async functions in an @await field', function (done) {
+				wrapper().handle(function(outcome) {
+					outcome.should.equal(Success(123));
+					done();
+				});
+			});
 		});
 	}
 	
@@ -266,6 +273,14 @@ class RunTests extends buddy.SingleSuite {
 	@await function awaitField(done) {
 		var response = @await waitForIt();
 		done(response);
+	}
+	
+	@await function wrapper() {
+		@async function local() {
+			@await waitForIt();
+			return 123;
+		}
+		return local();
 	}
 	
 	function waitForIt() {
