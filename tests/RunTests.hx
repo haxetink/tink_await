@@ -93,8 +93,8 @@ class RunTests extends buddy.SingleSuite {
 					switch outcome {
 						case Success(_): fail('Expected Failure');
 						case Failure(e):
-							utest.Assert.isTrue(Std.is(e, Error));
-							utest.Assert.isTrue(e.data == 'error');
+							Std.is(e, Error).should.be(true);
+							(e.data == 'error').should.be(true);
 					}
 					done();
 				});
@@ -116,8 +116,8 @@ class RunTests extends buddy.SingleSuite {
 					switch outcome {
 						case Success(_): fail('Expected Failure');
 						case Failure(e):
-							utest.Assert.isTrue(Std.is(e, Error));
-							utest.Assert.isTrue(e.data == 'error');
+							Std.is(e, Error).should.be(true);
+							(e.data == 'error').should.be(true);
 					}
 					done();
 				});
@@ -163,7 +163,10 @@ class RunTests extends buddy.SingleSuite {
 					// if `waitForIt()` returns Surprise, `value` will be an Outcome
 					value.should.be(true);
 					return Noise;
-				}).handle(done);
+				}).handle(function(outcome) {
+					outcome.should.equal(Success(Noise));
+					done();
+				});
 			});
 		});
 	}
