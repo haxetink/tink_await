@@ -1,0 +1,3 @@
+# @install: lix --silent download "haxelib:asynctools#0.1.0" into asynctools/0.1.0/haxelib
+-D asynctools=0.1.0
+-cp ${HAXESHIM_LIBCACHE}/asynctools/0.1.0/haxelib/

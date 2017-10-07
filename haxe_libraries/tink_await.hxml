@@ -1,0 +1,6 @@
+-D tink_await
+-cp src
+--macro tink.await.Await.use()
+-lib tink_macro
+-lib tink_core
+-lib tink_syntaxhub
