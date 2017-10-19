@@ -102,10 +102,10 @@ class AsyncField {
 		return body.func([tmp.toArg()], false).asExpr();
 	}
 	
-	function transformObj<T: {expr: Expr}>(ol: Array<T>, ctx: AsyncContext, final: Array<T> -> Thunk<Expr>): Thunk<Expr> {
+	function transformObj<T: {expr: Expr}>(ol: Array<T>, ctx: AsyncContext, finalize: Array<T> -> Thunk<Expr>): Thunk<Expr> {
 		var el = ol.map(function(v) return v.expr);
 		return function() return transformList(el, ctx, function(transformedEl: Array<Expr>){
-			return final({
+			return finalize({
 				var i = 0;
 				ol.map(function(v) {
 					var obj = Reflect.copy(v);
@@ -116,10 +116,10 @@ class AsyncField {
 		});
 	}
 	
-	function transformList(el: Array<Expr>, ctx: AsyncContext, final: Array<Expr> -> Thunk<Expr>): Thunk<Expr> {
+	function transformList(el: Array<Expr>, ctx: AsyncContext, finalize: Array<Expr> -> Thunk<Expr>): Thunk<Expr> {
 		function transformNext(i: Int, transformedEl: Array<Expr>): Thunk<Expr> {
 			if (i == el.length)
-				return final(transformedEl);
+				return finalize(transformedEl);
 			if (el[i] == null) {
 				transformedEl.push(null);
 				return function() return transformNext(i + 1, transformedEl);
