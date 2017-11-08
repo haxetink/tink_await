@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["tink", "cross", "utility", "sugar", "async"],
   "description": "Haxe async/await",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "releasenote": "Support haxe 4",
   "contributors": ["benmerckx"],
   "classPath": "src",
