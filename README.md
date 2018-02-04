@@ -14,7 +14,7 @@ Async/await for [tink_core](https://github.com/haxetink/tink_core) futures.
 
 Install with `haxelib install tink_await` and use it in your hxml with `-lib tink_await`. Mark a class or interface as `@await` and all methods with `@async` metadata in your class will be transformed.
 
-Any expression which returns a [`Future`](https://github.com/haxetink/tink_core#future) can be handled with `@await`. The example above will be transformed to something like this (there's a bit more boilerplate code which I'm omitting here):
+Any expression which returns a [`Future`](https://haxetink.github.io/tink_core/#/types/future) can be handled with `@await`. The example above will be transformed to something like this (there's a bit more boilerplate code which I'm omitting here):
 
 ```haxe
 function getConfig() {
@@ -59,7 +59,7 @@ If an @await is used in a (for or while) loop, the loop will continue after the 
 
 ## Working with Surprises
 
-An @async function always returns a [`Surprise<Data, Error>`](https://github.com/haxetink/tink_core#surprise). Any exception thrown inside the function, be it synchronous or asynchronous, will result in a [`Failure`](https://github.com/haxetink/tink_core#outcome). Any `Failure` you might receive in an @await call will also result in a `Failure`. A correct return will result in a [`Success`](https://github.com/haxetink/tink_core#outcome). This makes passing errors much easier. To demonstrate this I use some methods of [`asys`](https://github.com/benmerckx/asys) which has the same classes and methods as the synchronous haxe `sys` module. But instead of a synchronous result, they return a `Future` or a `Surprise`.
+An @async function always returns a [`Surprise<Data, Error>`](https://haxetink.github.io/tink_core/#/types/future?id=surprise). Any exception thrown inside the function, be it synchronous or asynchronous, will result in a [`Failure`](https://haxetink.github.io/tink_core/#/types/outcome?id=outcome). Any `Failure` you might receive in an @await call will also result in a `Failure`. A correct return will result in a [`Success`](https://haxetink.github.io/tink_core/#/types/outcome?id=outcome). This makes passing errors much easier. To demonstrate this I use some methods of [`asys`](https://github.com/benmerckx/asys) which has the same classes and methods as the synchronous haxe `sys` module. But instead of a synchronous result, they return a `Future` or a `Surprise`.
 
 ```haxe
 @async function getBuildFile() {
