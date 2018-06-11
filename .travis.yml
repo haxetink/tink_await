@@ -1,20 +1,5 @@
-sudo: required
-dist: trusty
+language: node_js
 
-language: haxe
-
-os:
-  - linux
-  - osx
-  
-haxe:
-  - "3.4.7"
-  - development
-  
-matrix:
-  allow_failures:
-    - haxe: development
-    
 install:
   - npm i -g lix
   - lix download
