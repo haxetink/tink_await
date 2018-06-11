@@ -1,16 +1,24 @@
 {
-  "name": "tink_await",
-  "url" : "https://github.com/haxetink/tink_await",
-  "license": "MIT",
-  "tags": ["tink", "cross", "utility", "sugar", "async"],
-  "description": "Haxe async/await",
-  "version": "0.4.0",
-  "releasenote": "Promise based",
-  "contributors": ["benmerckx"],
-  "classPath": "src",
-  "dependencies": {
-    "tink_macro": "",
-    "tink_core": "",
-    "tink_syntaxhub": ""
-  }
+	"name": "tink_await",
+	"license": "MIT",
+	"tags": [
+		"tink",
+		"cross",
+		"utility",
+		"sugar",
+		"async"
+	],
+	"classPath": "src",
+	"description": "Haxe async/await",
+	"contributors": [
+		"benmerckx"
+	],
+	"releasenote": "Promise based",
+	"version": "0.4.0",
+	"url": "https://github.com/haxetink/tink_await",
+	"dependencies": {
+		"tink_syntaxhub": "",
+		"tink_macro": "",
+		"tink_core": ""
+	}
 }
