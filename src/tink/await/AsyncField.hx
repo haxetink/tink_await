@@ -350,16 +350,17 @@ class AsyncField {
 						for (c in cases)
 							if (c.expr == null) {
 								if (ctx.needsResult) Context.error('Case '+c.guard+' needs a return value', e1.pos);
-								{expr: wrapper.invocation(emptyExpr()).at(e1.pos), guard: c.guard, values: c.values}
+								var e: Expr = wrapper.invocation(emptyExpr());
+								{expr: e.at(e1.pos), guard: c.guard, values: c.values}
 							}
-							else {expr: process(c.expr, ctx, wrapper.invocation).at(c.expr.pos), guard: c.guard, values: c.values}
+							else {expr: (process(c.expr, ctx, wrapper.invocation) : Expr) .at(c.expr.pos), guard: c.guard, values: c.values}
 					];
 					var transformedDefault = switch edef {
 						case null: null;
 						case def if (def.expr == null): 
 							if (ctx.needsResult) Context.error('Default case needs a return value', e1.pos);
-							wrapper.invocation(emptyExpr()).at(e1.pos);
-						default: process(edef, ctx, wrapper.invocation).at(e1.pos);
+							(wrapper.invocation(emptyExpr()): Expr).at(e1.pos);
+						default: (process(edef, ctx, wrapper.invocation): Expr).at(e1.pos);
 					}
 					var entry = ESwitch(transformed, transformedCases, transformedDefault).at(e.pos);
 					return function() return bundle([wrapper.declaration, entry]);
@@ -454,7 +455,7 @@ class AsyncWrapper {
 		argName = tmpVar();
 		var func;
 		if (ctx.needsResult) {
-			func = next(argName.resolve()).func([argName.toArg()], false);
+			func = (next(argName.resolve()): Expr).func([argName.toArg()], false);
 		} else {
 			var body: Expr = next(emptyExpr());
 			switch body.expr {
