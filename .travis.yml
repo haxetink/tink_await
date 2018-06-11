@@ -16,14 +16,15 @@ matrix:
     - haxe: development
     
 install:
-  - haxelib install travix
-  - haxelib run travix install
+  - npm i -g lix
+  - lix download
+  - lix run travix install
 
 script:
-  - haxelib run travix neko
-  - haxelib run travix python
-  - haxelib run travix node
-  #- haxelib run travix flash -D flash-exit -D reporter=buddy.reporting.TraceReporter
-  #- haxelib run travix java
-  - haxelib run travix cpp
-  - haxelib run travix php
+  - lix run travix neko
+  - lix run travix python
+  - lix run travix node
+  #- lix run travix flash -D flash-exit -D reporter=buddy.reporting.TraceReporter
+  #- lix run travix java
+  - lix run travix cpp
+  - lix run travix php
