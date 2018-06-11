@@ -57,9 +57,9 @@ If an @await is used in a (for or while) loop, the loop will continue after the 
 ```
 
 
-## Working with Surprises
+## Working with Promises
 
-An @async function always returns a [`Surprise<Data, Error>`](https://haxetink.github.io/tink_core/#/types/future?id=surprise). Any exception thrown inside the function, be it synchronous or asynchronous, will result in a [`Failure`](https://haxetink.github.io/tink_core/#/types/outcome?id=outcome). Any `Failure` you might receive in an @await call will also result in a `Failure`. A correct return will result in a [`Success`](https://haxetink.github.io/tink_core/#/types/outcome?id=outcome). This makes passing errors much easier. To demonstrate this I use some methods of [`asys`](https://github.com/benmerckx/asys) which has the same classes and methods as the synchronous haxe `sys` module. But instead of a synchronous result, they return a `Future` or a `Surprise`.
+An @async function always returns a [`Promise<Data>`](https://haxetink.github.io/tink_core/#/types/promise). Any exception thrown inside the function, be it synchronous or asynchronous, will result in a [`Failure`](https://haxetink.github.io/tink_core/#/types/outcome?id=outcome). Any `Failure` you might receive in an @await call will also result in a `Failure`. A correct return will result in a [`Success`](https://haxetink.github.io/tink_core/#/types/outcome?id=outcome). This makes passing errors much easier. To demonstrate this I use some methods of [`asys`](https://github.com/benmerckx/asys) which have the same classes and methods as the synchronous haxe `sys` module. But instead of a synchronous result, they return a `Future` or a `Promise`.
 
 ```haxe
 @async function getBuildFile() {
@@ -73,7 +73,7 @@ An @async function always returns a [`Surprise<Data, Error>`](https://haxetink.g
 }
 ```
 
-This would result in the function returning a `Surprise<String, Error>`. If you use this test function in another @async function the failure can 'bubble up'. 
+This would result in the function returning a `Promise<String>`. If you use this test function in another @async function the failure can 'bubble up'. 
 
 ```haxe
 @async function getBuildLines() {
@@ -101,7 +101,7 @@ To recap:
 
 You can also @await a `Future` which does not contain an `Outcome`, the result will simply be the value of the `Future`.
 
-Because all @async methods return a `Surprise` the usage when calling any of these outside of an @asyc function will look like this:
+Because all @async methods return a `Promise` the usage when calling any of these outside of an @asyc function will look like this:
 
 ```haxe
 function() {
@@ -114,7 +114,7 @@ function() {
 
 ## Typing @async functions
 
-An @async function's return type will also be transformed. The following function will result in a return type of `Surprise<String, Error>`
+An @async function's return type will also be transformed. The following function will result in a return type of `Promise<String>`
 
 ```haxe
 @async function(): String {
