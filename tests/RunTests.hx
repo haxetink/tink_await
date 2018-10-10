@@ -100,6 +100,18 @@ class RunTests extends buddy.SingleSuite {
 				});
 			});
 			
+			it('should keep thrown tink Error as is', function (done) {
+				throwTinkError().handle(function(outcome) {
+					switch outcome {
+						case Success(_): fail('Expected Failure');
+						case Failure(e):
+							Std.is(e, Error).should.be(true);
+							e.message.should.be('error');
+					}
+					done();
+				});
+			});
+			
 			it('should pass unexpected exceptions', function (done) {
 				unexpectedException().handle(function(outcome) {
 					var error = switch outcome {
@@ -255,6 +267,9 @@ class RunTests extends buddy.SingleSuite {
 	
 	@async function throwError()
 		throw 'error';
+	
+	@async function throwTinkError()
+		throw new Error('error');
 		
 	@async function unexpectedException() {
 		@await waitForIt();

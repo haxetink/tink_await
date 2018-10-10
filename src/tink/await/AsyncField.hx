@@ -151,7 +151,7 @@ class AsyncField {
 							return ${ctx.catcher.resolve()}($e1)
 					else if (ctx.asyncReturn)
 						macro @:pos(e.pos)
-							return __return(tink.core.Outcome.Failure(tink.core.Error.withData('Error', $e1)))
+							return __return(tink.core.Outcome.Failure(tink.await.Error.fromAny($e1)))
 					else
 						macro @:pos(e.pos)
 							throw $e1.data
@@ -318,7 +318,7 @@ class AsyncField {
 					else if (ctx.asyncReturn)
 						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
-								return __return(tink.core.Outcome.Failure(tink.core.Error.withData('Error', $transformed)))
+								return __return(tink.core.Outcome.Failure(tink.await.Error.fromAny($transformed)))
 						);
 					else
 						process(e1, ctx, function(transformed)
