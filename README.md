@@ -37,6 +37,33 @@ function getConfig() {
 }
 ```
 
+**Transform a function that doesn't return a (async) value**
+
+You can use `@await` on a function to indicate that you want tink_await to transform the function body.
+
+```haxe
+@await class Main {
+	@await static function main() {
+		if(@await foo() == 1) return;
+		trace(2);
+	}
+	
+	@async static function foo() return 1;
+	
+	static function check() {
+		$type(main); // Void -> Void
+		$type(foo); // Void -> tink.core.Promise<Int>
+	}
+}
+```
+
+In summary, there is a difference for @async and @await when used to annotate a function.
+
+- `@async` expects a return value and the function will be transformed into returning a `Promise<T>`
+- `@await` doesn't expect a return value and its return type will be `Void`
+
+**More**
+
 You can also use `@:async`and `@:await`.
 
 To see more examples have a look at [the tests](https://github.com/benmerckx/await/blob/master/tests/RunTests.hx#L96).
