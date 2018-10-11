@@ -6,9 +6,13 @@ using tink.CoreApi;
 
 class OutcomeTools {
 	
-	public static function getOutcome<A, F>(?outcome: tink.core.Outcome<A, F>, ?value: A): Outcome<A, F> {
-		if (outcome == null) return Success(value);
-		return outcome;
+	public static function getOutcome<A, F>(?outcome: tink.core.Outcome<A, F>, ?value: A): Outcome<A, Error> {
+		return switch outcome {
+			case null: Success(value);
+			case Success(v): cast outcome;
+			case Failure(e) if(Std.is(e, Error)): cast outcome;
+			case Failure(e): Failure(Error.withData('Unexpected error', e));
+		}
 	}
 	
 }
