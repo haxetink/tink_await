@@ -112,14 +112,18 @@ class RunTests extends buddy.SingleSuite {
 				});
 			});
 			
-			it('should still support Surprise', function (done) {
-				catchSurpriseError().handle(function(outcome) {
+			it('should catch Surprise failure with @async', function (done) {
+				catchSurpriseErrorAsync().handle(function(outcome) {
 					switch outcome {
 						case Success(s): s.should.be('failed');
 						case Failure(e): fail(e);
 					}
 					done();
 				});
+			});
+			
+			it('should catch Surprise failure with @await', function (done) {
+				catchSurpriseErrorAwait(done, fail);
 			});
 			
 			it('should pass unexpected exceptions', function (done) {
@@ -284,11 +288,20 @@ class RunTests extends buddy.SingleSuite {
 	function surpriseError():Surprise<String, String>
 		return Future.async(function(cb) cb(Failure('failed')));
 	
-	@async function catchSurpriseError():String
+	@async function catchSurpriseErrorAsync():String
 		return try {
 			@await surpriseError();
 			'success';
 		} catch(e:Dynamic) e;
+		
+	@await function catchSurpriseErrorAwait(done, fail)
+		try {
+			@await surpriseError();
+			fail('Should throw');
+		} catch(e:Dynamic) {
+			(e:String).should().be('failed');
+			done();
+		}
 		
 	@async function unexpectedException() {
 		@await waitForIt();

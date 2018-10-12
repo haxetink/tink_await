@@ -83,7 +83,7 @@ class AsyncField {
 		var catchErr = catchCall(ctx.catcher, Context.currentPos());
 		var fail = ctx.asyncReturn
 			? catchErr
-			: macro throw e.data;
+			: macro throw e;
 		var result = tmp+'_result';
 		var body = macro {
 			var $result;
