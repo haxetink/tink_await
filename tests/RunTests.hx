@@ -126,6 +126,23 @@ class RunTests extends buddy.SingleSuite {
 				catchSurpriseErrorAwait(done, fail);
 			});
 			
+			it('should catch Promise failure as Error with @async', function (done) {
+				catchPromiseErrorAsync().handle(function(outcome) {
+					switch outcome {
+						case Success(e): 
+							Std.is(e, Error).should.be(true);
+							e.message.should.be('message');
+							e.data.should.be('failed');
+						case Failure(e): fail(e);
+					}
+					done();
+				});
+			});
+			
+			it('should catch Promise failure as Error with @await', function (done) {
+				catchPromiseErrorAwait(done, fail);
+			});
+			
 			it('should pass unexpected exceptions', function (done) {
 				unexpectedException().handle(function(outcome) {
 					var error = switch outcome {
@@ -301,6 +318,26 @@ class RunTests extends buddy.SingleSuite {
 		} catch(e:Dynamic) {
 			(e:String).should().be('failed');
 			done();
+		}
+	function promiseError():Promise<String>
+		return Error.withData('message', 'failed');
+	
+	@async function catchPromiseErrorAsync():Error
+		return try {
+			@await promiseError();
+			new Error('success');
+		} catch(e:Error) e;
+		
+	@await function catchPromiseErrorAwait(done, fail)
+		try {
+			@await promiseError();
+			fail('Should throw');
+		} catch(e:Error) {
+			e.message.should().be('message');
+			(e.data:String).should().be('failed');
+			done();
+		} catch(e:Dynamic) {
+			fail('Should catch a tink error');
 		}
 		
 	@async function unexpectedException() {

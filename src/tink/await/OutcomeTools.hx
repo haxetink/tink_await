@@ -11,7 +11,7 @@ class OutcomeTools {
 			case null: Success(value);
 			case Success(v): cast outcome;
 			case Failure(e) if(Std.is(e, Error)): cast outcome;
-			case Failure(e): Failure(Error.withData('Unexpected error', e));
+			case Failure(e): Failure(tink.await.Error.fromAny(e));
 		}
 	}
 	

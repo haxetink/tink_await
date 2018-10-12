@@ -154,7 +154,7 @@ class AsyncField {
 							return __return(tink.core.Outcome.Failure(tink.await.Error.fromAny($e1)))
 					else
 						macro @:pos(e.pos)
-							throw $e1.data
+							throw tink.await.Error.unwrap($e1)
 				;
 			case EBreak if(ctx.loop != null):
 				return macro @:pos(e.pos)
@@ -287,7 +287,7 @@ class AsyncField {
 						{type: c.type, name: c.name, expr: c.expr == null ? null : (process(c.expr, ctx, wrapper.invocation): Expr)}
 				];
 				// Prevent rethrow
-				var body = ETry(macro throw e.data, transformedCatches).at(e.pos);
+				var body = ETry(macro throw tink.await.Error.unwrap(e), transformedCatches).at(e.pos);
 				var func = body.func(['e'.toArg((macro: Dynamic))]);
 				var declaration = EFunction(name, func).at(e.pos);
 				ctx.catcher = name;
@@ -323,7 +323,7 @@ class AsyncField {
 					else
 						process(e1, ctx, function(transformed)
 							return macro @:pos(e.pos)
-								throw $transformed.data
+								throw tink.await.Error.unwrap($transformed)
 						);
 			case ETernary(econd, eif, eelse) |
 				 EIf (econd, eif, eelse):
