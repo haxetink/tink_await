@@ -289,7 +289,7 @@ class AsyncField {
 				// Prevent rethrow
 				var body = ETry(macro throw tink.await.Error.unwrap(e), transformedCatches).at(e.pos);
 				var func = body.func(['e'.toArg((macro: Dynamic))]);
-				var declaration = EFunction(name, func).at(e.pos);
+				var declaration = EFunction(#if (haxe_ver >= 4) FNamed(name) #else name #end, func).at(e.pos);
 				ctx.catcher = name;
 				var call = name.resolve().call(['e'.resolve()]);
 				var entry = process(e1, ctx, wrapper.invocation);
@@ -467,7 +467,7 @@ class AsyncWrapper {
 			}
 			func = body.func(false);
 		}
-		declaration = EFunction(functionName, func).at();
+		declaration = EFunction(#if (haxe_ver >= 4) FNamed(functionName) #else functionName #end, func).at();
 	}
 	
 	public function invocation(transformed: Expr): Thunk<Expr> {
