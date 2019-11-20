@@ -14,8 +14,8 @@
 		"benmerckx",
 		"kevinresol"
 	],
-	"releasenote": "Improved error handling",
-	"version": "0.5.0",
+	"releasenote": "Haxe 4 compat",
+	"version": "0.6.0",
 	"url": "https://github.com/haxetink/tink_await",
 	"dependencies": {
 		"tink_syntaxhub": "",
