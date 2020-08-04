@@ -18,7 +18,7 @@ Any expression which returns a [`Future`](https://haxetink.github.io/tink_core/#
 
 ```haxe
 function getConfig() {
-  return Future.asyc(function(__return) {
+  return Future.async(function(__return) {
     loadFile('config.json').handle(function(tmp) {
       __return(Success(Json.parse(tmp)));
     });
@@ -76,7 +76,7 @@ If an @await is used in a (for or while) loop, the loop will continue after the 
 ```haxe
 @async function loop() {
   for (i in 0 ... 10) {
-    // will continue after someAsycCall is done
+    // will continue after someAsyncCall is done
     @await someAsyncCall();
   }
   return 'done';
@@ -128,7 +128,7 @@ To recap:
 
 You can also @await a `Future` which does not contain an `Outcome`, the result will simply be the value of the `Future`.
 
-Because all @async methods return a `Promise` the usage when calling any of these outside of an @asyc function will look like this:
+Because all @async methods return a `Promise` the usage when calling any of these outside of an @async function will look like this:
 
 ```haxe
 function() {
