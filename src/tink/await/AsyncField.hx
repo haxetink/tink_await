@@ -30,6 +30,8 @@ class AsyncField {
 		this.asyncReturn = asyncReturn;
 	}
 	
+	static public inline var FUNC = #if (tink_core < "2") 'async' #else 'irreversible' #end;
+	
 	public function transform(): Function {
 		var unknown = expr.pos.makeBlankType();
 		var type = func.ret == null ? unknown : func.ret;
@@ -41,7 +43,7 @@ class AsyncField {
 			expr: 
 				if (asyncReturn)
 					macro @:pos(expr.pos)
-						return tink.core.Promise.lift(tink.core.Future.async(function(__return) 
+						return tink.core.Promise.lift(tink.core.Future.$FUNC(function(__return)
 							#if await_catch_none
 							${process(expr, {asyncReturn: true, needsResult: false}, function(e) return e)}
 							#else
