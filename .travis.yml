@@ -13,6 +13,6 @@ script:
   - lix run travix python
   - lix run travix node
   #- lix run travix flash -D flash-exit -D reporter=buddy.reporting.TraceReporter
-  #- lix run travix java
+  - lix run travix java -D jvm
   - lix run travix cpp
   - lix run travix php

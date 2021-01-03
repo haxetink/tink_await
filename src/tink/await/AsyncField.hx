@@ -75,7 +75,7 @@ class AsyncField {
 	function catchCall(catcher: Null<String>, pos: Position)
 		return 
 			if (catcher == null) 
-				macro @:pos(pos) __return(tink.core.Outcome.Failure(e))
+				macro @:pos(pos) __return(tink.core.Outcome.Failure(tink.core.Error.asError(e)))
 			else 
 				catcher.resolve().call([macro @:pos(pos) e]);
 		
