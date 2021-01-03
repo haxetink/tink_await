@@ -1,6 +1,10 @@
 package tink.await;
 
-import haxe.macro.Context;
+#if (haxe_ver >= 4.1)
+import Std.isOfType as is;
+#else
+import Std.is;
+#end
 
 using tink.CoreApi;
 
@@ -10,7 +14,7 @@ class OutcomeTools {
 		return switch outcome {
 			case null: Success(value);
 			case Success(v): cast outcome;
-			case Failure(e) if(Std.is(e, Error)): cast outcome;
+			case Failure(e) if(is(e, Error)): cast outcome;
 			case Failure(e): Failure(tink.await.Error.fromAny(e));
 		}
 	}
