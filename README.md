@@ -149,6 +149,39 @@ An @async function's return type will also be transformed. The following functio
 }
 ```
 
+## JS Promises
+
+When `@await` is used on an expression that is a JS Promise, `tink_await` will extract the `T` from `js.lib.Promise<T>` (if it is a `js.lib.Promise`) and wrap the expression in a check-type statement:
+`($expr : tink.core.Promise<T>)`.
+
+This will leverage the magic of `tink_core` to silently convert the JS promise into a tink promise.
+
+```haxe
+var secret = @:await new SecretManagerServiceClient({
+				credentials: {
+					client_email: 'test',
+					private_key: 'test'
+				}
+			}).accessSecretVersion({
+				name: 'test'
+			});
+```
+Becomes:
+```haxe
+var secret = @:await (new SecretManagerServiceClient({
+				credentials: {
+					client_email: 'test',
+					private_key: 'test'
+				}
+			}) : tink.core.Promise<ts.Tuple3<google_cloud.secret_manager.build.protos.protos.google.cloud.secretmanager.v1.IAccessSecretVersionResponse, Null<google_cloud.secret_manager.build.protos.protos.google.cloud.secretmanager.v1.IAccessSecretVersionRequest>, Null<{}>>>
+).accessSecretVersion({
+				name: 'test'
+			});
+```
+
+Try typing that 10 times quickly.
+
+
 ## Flags
 
 - `-D await_catch_none`: Unexpected exceptions are never caught.
