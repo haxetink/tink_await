@@ -201,10 +201,32 @@ class AsyncField {
 				return function() return next(EFunction(name, new AsyncField(f, false).transform()).at(pos));
 			case EMeta(m, em) if (isAwait(m.name)):
 				var tmp = tmpVar();
-				return function() return process(em, ctx, function(transformed)
-					return function() return macro @:pos(em.pos)
-						$transformed.handle(${handler(tmp, ctx, next)})
-				);
+				return function() return process(em, ctx,
+					function(transformed:Expr) {
+                        #if (js || hxnodejs)
+						var ct = transformed.typeof()
+							.sure()
+							.toComplex();
+						var extractedParam = switch ct {
+							case TPath({name: 'Promise',
+								pack: ['js', 'lib'],
+								params: [param]}):
+								switch param {
+									case TPType(t): t;
+									default: null;
+								}
+							default: null;
+						}
+						if (extractedParam != null)
+							transformed = macro($transformed : tink.core.Promise<$extractedParam>);
+                        #end
+						return function() return
+							macro @:pos(em.pos) {
+							$transformed
+									.handle(${handler(tmp, ctx,
+										next)});
+						}
+					});
 			case EFor(it, expr):
 				if (!hasAwait(expr)) {
 					ctx.loop = null;
