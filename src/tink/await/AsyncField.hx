@@ -203,7 +203,7 @@ class AsyncField {
 				var tmp = tmpVar();
 				return function() return process(em, ctx, function(transformed)
 					return function() return macro @:pos(em.pos)
-						$transformed.handle(${handler(tmp, ctx, next)})
+						tink.core.Promise.lift($transformed).handle(${handler(tmp, ctx, next)})
 				);
 			case EFor(it, expr):
 				if (!hasAwait(expr)) {
